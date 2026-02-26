@@ -3,654 +3,1180 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>NLPQuery – MongoDB</title>
-<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Rajdhani:wght@500;600;700&display=swap" rel="stylesheet">
+<title>NLP Query Retrieval System</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;800&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <style>
-:root {
-  --bg: #0d0f14;
-  --sidebar: #111318;
-  --card: #181c24;
-  --card2: #1d2230;
-  --border: #262d3d;
-  --green: #00e5a0;
-  --purple: #7c5af5;
-  --yellow: #f5c842;
-  --red: #f55a5a;
-  --text: #e2e8f0;
-  --muted: #5a6480;
-  --cyan: #00d4ff;
-}
-* { margin:0; padding:0; box-sizing:border-box; }
-body { font-family:'Rajdhani',sans-serif; background:var(--bg); color:var(--text); display:flex; flex-direction:column; height:100vh; overflow:hidden; }
+  :root {
+    --bg: #0a0a0f;
+    --surface: #12121a;
+    --card: #1a1a26;
+    --border: #2a2a3e;
+    --accent: #00f5c4;
+    --accent2: #7c5cfc;
+    --accent3: #ff6b6b;
+    --text: #e8e8f0;
+    --muted: #6b6b8a;
+    --glow: 0 0 24px rgba(0,245,196,0.2);
+  }
 
-/* HEADER */
-header {
-  display:flex; align-items:center; justify-content:space-between;
-  background:#0a0c10; border-bottom:1px solid var(--border);
-  padding:0 24px; height:56px; flex-shrink:0; z-index:100;
-}
-.logo { display:flex; align-items:center; gap:10px; }
-.logo-icon {
-  width:34px; height:34px; border-radius:10px;
-  background:linear-gradient(135deg,#7c5af5,#00e5a0);
-  display:flex; align-items:center; justify-content:center;
-  font-size:16px;
-}
-.logo-text { font-size:20px; font-weight:700; letter-spacing:1px; }
-.logo-text span:first-child { color:var(--text); }
-.logo-text span:last-child { color:var(--green); }
-.header-right { display:flex; align-items:center; gap:20px; }
-.header-subtitle { font-size:13px; color:var(--muted); letter-spacing:1px; font-family:'JetBrains Mono',monospace; }
-.status { display:flex; align-items:center; gap:6px; font-size:12px; font-family:'JetBrains Mono',monospace; color:var(--green); }
-.status-dot { width:8px; height:8px; border-radius:50%; background:var(--green); animation:pulse 2s infinite; }
-@keyframes pulse { 0%,100%{opacity:1;box-shadow:0 0 0 0 rgba(0,229,160,.4)} 50%{opacity:.7;box-shadow:0 0 0 6px rgba(0,229,160,0)} }
+  * { margin:0; padding:0; box-sizing:border-box; }
 
-/* LAYOUT */
-.layout { display:flex; flex:1; overflow:hidden; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Syne', sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
 
-/* SIDEBAR */
-aside {
-  width:260px; flex-shrink:0; background:var(--sidebar);
-  border-right:1px solid var(--border); overflow-y:auto;
-  display:flex; flex-direction:column; padding:20px 0;
-}
-.nav-section { padding:0 16px; margin-bottom:24px; }
-.nav-label { font-size:11px; letter-spacing:2px; color:var(--muted); font-family:'JetBrains Mono',monospace; margin-bottom:10px; padding:0 8px; }
-.nav-item {
-  display:flex; align-items:center; gap:10px; padding:10px 12px;
-  border-radius:8px; cursor:pointer; font-size:15px; font-weight:600;
-  color:#8892b0; transition:all .2s; margin-bottom:2px;
-}
-.nav-item:hover { background:rgba(255,255,255,.05); color:var(--text); }
-.nav-item.active { background:rgba(0,229,160,.1); color:var(--green); border:1px solid rgba(0,229,160,.2); }
-.nav-icon { font-size:16px; width:20px; text-align:center; }
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(0,245,196,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,245,196,0.03) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+    z-index: 0;
+  }
 
-.model-item {
-  display:flex; align-items:center; justify-content:space-between;
-  padding:10px 12px; border-radius:8px; border:1px solid var(--border);
-  margin-bottom:8px; font-family:'JetBrains Mono',monospace; font-size:13px;
-  transition:all .2s; cursor:pointer;
-}
-.model-item.active { border-color:var(--green); background:rgba(0,229,160,.05); }
-.model-item:hover { border-color:rgba(255,255,255,.2); }
-.model-dot { width:8px; height:8px; border-radius:50%; }
-.model-acc { font-size:12px; font-weight:700; }
+  body::after {
+    content: '';
+    position: fixed;
+    top: -200px;
+    right: -200px;
+    width: 600px;
+    height: 600px;
+    background: radial-gradient(circle, rgba(124,92,252,0.12) 0%, transparent 70%);
+    pointer-events: none;
+    z-index: 0;
+  }
 
-.db-card { background:var(--card); border:1px solid var(--border); border-radius:10px; padding:14px; }
-.db-label { font-size:11px; letter-spacing:2px; color:var(--muted); font-family:'JetBrains Mono',monospace; margin-bottom:6px; }
-.db-name { color:var(--green); font-family:'JetBrains Mono',monospace; font-size:14px; font-weight:700; }
-.db-meta { font-size:12px; color:var(--muted); font-family:'JetBrains Mono',monospace; margin-top:4px; }
+  .app { position: relative; z-index: 1; }
 
-/* MAIN */
-main { flex:1; overflow-y:auto; padding:24px; display:flex; flex-direction:column; gap:20px; }
+  header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 20px 40px;
+    border-bottom: 1px solid var(--border);
+    background: rgba(10,10,15,0.8);
+    backdrop-filter: blur(20px);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
 
-/* QUERY SECTION */
-.query-section { }
-.section-label { font-size:11px; letter-spacing:3px; color:var(--muted); font-family:'JetBrains Mono',monospace; margin-bottom:12px; }
-.query-bar { display:flex; gap:10px; margin-bottom:12px; }
-.query-input {
-  flex:1; background:var(--card); border:1px solid var(--border);
-  border-radius:10px; padding:12px 18px; color:var(--text);
-  font-family:'Rajdhani',sans-serif; font-size:15px; font-weight:500;
-  outline:none; transition:border-color .2s;
-}
-.query-input:focus { border-color:var(--green); }
-.query-input::placeholder { color:var(--muted); }
-.btn-clear {
-  background:var(--card); border:1px solid var(--border); border-radius:10px;
-  color:var(--muted); font-family:'Rajdhani',sans-serif; font-size:14px; font-weight:600;
-  padding:0 18px; cursor:pointer; transition:all .2s;
-}
-.btn-clear:hover { border-color:var(--text); color:var(--text); }
-.btn-run {
-  background:var(--green); border:none; border-radius:10px;
-  color:#0a0c10; font-family:'Rajdhani',sans-serif; font-size:15px; font-weight:700;
-  padding:0 22px; cursor:pointer; display:flex; align-items:center; gap:8px;
-  transition:all .2s; letter-spacing:.5px;
-}
-.btn-run:hover { background:#00ffb3; transform:translateY(-1px); box-shadow:0 4px 20px rgba(0,229,160,.4); }
-.btn-run:active { transform:translateY(0); }
+  .logo { display: flex; align-items: center; gap: 12px; }
+  .logo-icon {
+    width: 36px; height: 36px;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px;
+  }
+  .logo-text { font-size: 18px; font-weight: 800; letter-spacing: -0.5px; }
+  .logo-text span { color: var(--accent); }
 
-.chips { display:flex; flex-wrap:wrap; gap:8px; }
-.chip {
-  background:var(--card); border:1px solid var(--border); border-radius:20px;
-  padding:6px 14px; font-size:13px; font-weight:600; cursor:pointer;
-  transition:all .2s; color:#8892b0;
-}
-.chip:hover { border-color:var(--green); color:var(--green); background:rgba(0,229,160,.05); }
+  .header-status {
+    display: flex; align-items: center; gap: 8px;
+    font-family: 'Space Mono', monospace;
+    font-size: 12px; color: var(--muted);
+  }
+  .status-dot {
+    width: 8px; height: 8px;
+    background: var(--accent);
+    border-radius: 50%;
+    animation: pulse 2s infinite;
+  }
+  @keyframes pulse {
+    0%, 100% { opacity: 1; box-shadow: 0 0 0 0 rgba(0,245,196,0.4); }
+    50% { opacity: 0.7; box-shadow: 0 0 0 6px rgba(0,245,196,0); }
+  }
 
-/* PIPELINE STEPS */
-.pipeline { display:flex; align-items:center; gap:0; margin-bottom:16px; }
-.step {
-  display:flex; align-items:center; gap:6px; padding:8px 16px;
-  border-top:2px solid var(--border); border-bottom:2px solid var(--border);
-  font-size:13px; font-family:'JetBrains Mono',monospace; color:var(--muted);
-  flex:1; justify-content:center; transition:all .3s;
-}
-.step.done { border-color:var(--green); color:var(--green); }
-.step.active { border-color:var(--yellow); color:var(--yellow); animation:blink .8s infinite; }
-@keyframes blink { 0%,100%{opacity:1} 50%{opacity:.4} }
-.step-check { font-size:12px; }
+  .main {
+    display: grid;
+    grid-template-columns: 280px 1fr;
+    grid-template-rows: auto 1fr;
+    min-height: calc(100vh - 77px);
+  }
 
-/* GENERATED QUERY */
-.query-card { background:var(--card); border:1px solid var(--border); border-radius:12px; padding:18px; }
-.query-card-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:12px; }
-.query-card-title { font-size:13px; letter-spacing:2px; color:var(--green); font-family:'JetBrains Mono',monospace; font-weight:700; }
-.btn-copy {
-  background:transparent; border:1px solid var(--border); border-radius:6px;
-  color:var(--muted); font-size:12px; padding:4px 10px; cursor:pointer;
-  font-family:'JetBrains Mono',monospace; transition:all .2s;
-}
-.btn-copy:hover { border-color:var(--green); color:var(--green); }
-.query-code { font-family:'JetBrains Mono',monospace; font-size:13px; line-height:1.7; white-space:pre-wrap; word-break:break-word; }
-.kw { color:var(--purple); }
-.field { color:var(--cyan); }
-.val { color:var(--yellow); }
-.op { color:var(--green); }
-.str { color:#f0a070; }
+  .sidebar {
+    grid-row: 1 / 3;
+    border-right: 1px solid var(--border);
+    padding: 24px 0;
+    background: rgba(18,18,26,0.6);
+  }
 
-/* STATS */
-.stats-row { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; }
-.stat-card {
-  background:var(--card); border:1px solid var(--border); border-radius:12px;
-  padding:16px; transition:border-color .2s;
-}
-.stat-card.highlight { border-color:var(--green); }
-.stat-label { font-size:11px; letter-spacing:2px; color:var(--muted); font-family:'JetBrains Mono',monospace; margin-bottom:8px; }
-.stat-val { font-size:32px; font-weight:700; font-family:'JetBrains Mono',monospace; line-height:1; }
-.stat-sub { font-size:12px; color:var(--muted); font-family:'JetBrains Mono',monospace; margin-top:6px; }
+  .sidebar-section { padding: 8px 24px; margin-bottom: 4px; }
+  .sidebar-label {
+    font-size: 10px; font-weight: 600;
+    letter-spacing: 2px; color: var(--muted);
+    text-transform: uppercase; margin-bottom: 8px; padding: 0 4px;
+  }
 
-/* CHARTS */
-.charts-row { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
-.chart-card { background:var(--card); border:1px solid var(--border); border-radius:12px; padding:20px; }
-.chart-title { font-size:16px; font-weight:700; margin-bottom:4px; }
-.chart-sub { font-size:12px; color:var(--muted); font-family:'JetBrains Mono',monospace; margin-bottom:16px; }
+  .nav-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 10px 12px; border-radius: 8px;
+    cursor: pointer; font-size: 14px;
+    color: var(--muted); transition: all 0.2s; font-weight: 600;
+  }
+  .nav-item:hover { background: var(--border); color: var(--text); }
+  .nav-item.active { background: rgba(0,245,196,0.1); color: var(--accent); }
+  .nav-item .icon { font-size: 16px; }
 
-/* RESULTS TABLE */
-.table-card { background:var(--card); border:1px solid var(--border); border-radius:12px; overflow:hidden; }
-.table-header { display:flex; align-items:center; justify-content:space-between; padding:16px 20px; border-bottom:1px solid var(--border); }
-.table-title { font-size:17px; font-weight:700; }
-.table-count { font-size:12px; color:var(--muted); font-family:'JetBrains Mono',monospace; }
-table { width:100%; border-collapse:collapse; }
-th { font-size:11px; letter-spacing:2px; color:var(--muted); font-family:'JetBrains Mono',monospace; text-align:left; padding:10px 20px; border-bottom:1px solid var(--border); }
-td { padding:13px 20px; font-size:14px; font-weight:600; border-bottom:1px solid rgba(38,45,61,.5); }
-tr:last-child td { border-bottom:none; }
-tr:hover td { background:rgba(255,255,255,.02); }
-.badge {
-  display:inline-block; padding:3px 10px; border-radius:20px;
-  font-size:11px; font-weight:700; font-family:'JetBrains Mono',monospace;
-}
-.badge.high { background:rgba(124,90,245,.2); color:var(--purple); border:1px solid rgba(124,90,245,.3); }
-.badge.medium { background:rgba(245,200,66,.15); color:var(--yellow); border:1px solid rgba(245,200,66,.3); }
-.badge.low { background:rgba(245,90,90,.15); color:var(--red); border:1px solid rgba(245,90,90,.3); }
+  .sidebar-divider { border: none; border-top: 1px solid var(--border); margin: 16px 24px; }
 
-/* LOGS */
-.logs-card { background:var(--card); border:1px solid var(--border); border-radius:12px; overflow:hidden; }
-.logs-header { display:flex; align-items:center; justify-content:space-between; padding:14px 20px; border-bottom:1px solid var(--border); }
-.logs-title { font-size:17px; font-weight:700; }
-.live-badge { display:flex; align-items:center; gap:6px; font-size:12px; color:var(--green); font-family:'JetBrains Mono',monospace; }
-.live-dot { width:7px; height:7px; border-radius:50%; background:var(--green); animation:pulse 1.5s infinite; }
-.logs-body { padding:16px 20px; font-family:'JetBrains Mono',monospace; font-size:12.5px; line-height:2; }
-.log-line { display:flex; gap:14px; }
-.log-time { color:var(--muted); }
-.log-info { color:var(--cyan); }
-.log-success { color:var(--green); }
-.log-warn { color:var(--yellow); }
-.log-text { color:#8892b0; }
+  .model-badge {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 8px 12px; background: var(--card);
+    border-radius: 8px; margin-bottom: 6px;
+    font-size: 13px; cursor: pointer;
+    border: 1px solid transparent; transition: all 0.2s;
+  }
+  .model-badge:hover { border-color: var(--border); }
+  .model-badge.active-model { border-color: var(--accent); }
+  .model-dot { width: 8px; height: 8px; border-radius: 50%; }
+  .model-acc { font-family: 'Space Mono', monospace; font-size: 11px; color: var(--accent); }
 
-/* EMPTY STATE */
-.empty-state { flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:60px; text-align:center; }
-.empty-icon { font-size:64px; margin-bottom:16px; filter:drop-shadow(0 0 20px rgba(0,229,160,.3)); }
-.empty-text { font-size:16px; color:var(--muted); line-height:1.6; font-family:'JetBrains Mono',monospace; }
+  /* ---- UPLOAD SECTION ---- */
+  .upload-zone {
+    position: relative;
+    border: 2px dashed var(--border);
+    border-radius: 12px;
+    padding: 18px 14px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.3s;
+    background: rgba(0,0,0,0.2);
+    overflow: hidden;
+  }
+  .upload-zone:hover, .upload-zone.drag-over {
+    border-color: var(--accent);
+    background: rgba(0,245,196,0.04);
+    box-shadow: 0 0 18px rgba(0,245,196,0.1);
+  }
+  .upload-zone input[type="file"] {
+    position: absolute; inset: 0;
+    opacity: 0; cursor: pointer; width: 100%; height: 100%;
+  }
+  .upload-icon {
+    font-size: 26px; margin-bottom: 6px;
+    display: block;
+    transition: transform 0.3s;
+  }
+  .upload-zone:hover .upload-icon { transform: translateY(-3px); }
+  .upload-main-text {
+    font-size: 12px; font-weight: 700;
+    color: var(--text); margin-bottom: 3px;
+    letter-spacing: 0.3px;
+  }
+  .upload-sub-text {
+    font-size: 10px; color: var(--muted);
+    font-family: 'Space Mono', monospace;
+  }
+  .upload-formats {
+    display: flex; gap: 4px; justify-content: center;
+    margin-top: 10px; flex-wrap: wrap;
+  }
+  .fmt-tag {
+    background: var(--border); color: var(--muted);
+    border-radius: 4px; padding: 2px 6px;
+    font-size: 10px; font-weight: 700;
+    font-family: 'Space Mono', monospace;
+    letter-spacing: 0.5px;
+  }
 
-/* HIDDEN */
-.hidden { display:none !important; }
+  /* Uploaded file card */
+  .file-loaded {
+    display: none;
+    background: rgba(0,245,196,0.06);
+    border: 1px solid rgba(0,245,196,0.3);
+    border-radius: 10px;
+    padding: 10px 12px;
+    margin-top: 8px;
+    animation: slideIn 0.35s ease;
+  }
+  .file-loaded-row {
+    display: flex; align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+  }
+  .file-loaded-info { flex: 1; min-width: 0; }
+  .file-loaded-name {
+    font-size: 12px; font-weight: 700;
+    color: var(--accent);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .file-loaded-meta {
+    font-size: 10px; color: var(--muted);
+    font-family: 'Space Mono', monospace;
+    margin-top: 2px;
+  }
+  .file-remove-btn {
+    background: none; border: 1px solid var(--border);
+    color: var(--muted); border-radius: 6px;
+    padding: 3px 7px; font-size: 11px;
+    cursor: pointer; transition: all 0.2s; flex-shrink: 0;
+  }
+  .file-remove-btn:hover { border-color: var(--accent3); color: var(--accent3); }
 
-/* SCROLLBAR */
-::-webkit-scrollbar { width:6px; }
-::-webkit-scrollbar-track { background:transparent; }
-::-webkit-scrollbar-thumb { background:var(--border); border-radius:3px; }
+  .file-preview-toggle {
+    margin-top: 8px;
+    background: none; border: 1px solid var(--border);
+    color: var(--muted); border-radius: 6px;
+    padding: 4px 10px; font-size: 10px;
+    cursor: pointer; transition: all 0.2s; width: 100%;
+    font-family: 'Space Mono', monospace; font-weight: 700;
+    letter-spacing: 0.5px;
+  }
+  .file-preview-toggle:hover { border-color: var(--accent); color: var(--accent); }
+
+  .file-data-preview {
+    display: none;
+    margin-top: 8px;
+    max-height: 120px;
+    overflow-y: auto;
+    font-family: 'Space Mono', monospace;
+    font-size: 10px;
+    color: var(--muted);
+    line-height: 1.7;
+    border-top: 1px solid var(--border);
+    padding-top: 8px;
+  }
+  .file-data-preview table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 10px;
+  }
+  .file-data-preview th {
+    color: var(--accent);
+    text-align: left;
+    padding: 2px 6px;
+    border-bottom: 1px solid var(--border);
+    white-space: nowrap;
+  }
+  .file-data-preview td {
+    padding: 2px 6px;
+    color: var(--muted);
+    white-space: nowrap;
+    font-size: 10px;
+    font-family: 'Space Mono', monospace;
+    border: none;
+  }
+  .file-data-preview tr:hover td { color: var(--text); }
+
+  /* Upload progress bar */
+  .upload-progress {
+    display: none;
+    margin-top: 8px;
+  }
+  .progress-bar-bg {
+    background: var(--border);
+    border-radius: 4px;
+    height: 4px;
+    overflow: hidden;
+  }
+  .progress-bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+    border-radius: 4px;
+    width: 0%;
+    transition: width 0.3s ease;
+  }
+  .progress-label {
+    font-size: 10px; color: var(--muted);
+    font-family: 'Space Mono', monospace;
+    margin-top: 4px; text-align: center;
+  }
+
+  /* active data source badge in query panel */
+  .data-source-banner {
+    display: none;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 14px;
+    background: rgba(0,245,196,0.06);
+    border: 1px solid rgba(0,245,196,0.2);
+    border-radius: 8px;
+    margin-top: 10px;
+    font-size: 12px;
+    color: var(--accent);
+    font-family: 'Space Mono', monospace;
+    font-weight: 700;
+    animation: slideIn 0.3s ease;
+  }
+  .data-source-banner .ds-icon { font-size: 14px; }
+  .data-source-banner .ds-name { flex: 1; color: var(--text); font-size: 12px; }
+  .data-source-banner .ds-rows { color: var(--muted); font-size: 11px; }
+
+  /* query panel */
+  .query-panel {
+    padding: 32px 40px 24px;
+    border-bottom: 1px solid var(--border);
+    background: rgba(18,18,26,0.4);
+  }
+  .panel-title {
+    font-size: 13px; font-weight: 600;
+    letter-spacing: 2px; color: var(--muted);
+    text-transform: uppercase; margin-bottom: 16px;
+  }
+  .query-wrapper { position: relative; }
+  .query-input {
+    width: 100%;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 16px 120px 16px 20px;
+    color: var(--text);
+    font-family: 'Syne', sans-serif;
+    font-size: 15px; font-weight: 400;
+    outline: none; transition: all 0.3s;
+    resize: none; height: 56px; line-height: 24px;
+  }
+  .query-input:focus {
+    border-color: var(--accent);
+    box-shadow: var(--glow);
+    background: rgba(26,26,38,0.9);
+  }
+  .query-input::placeholder { color: var(--muted); }
+  .query-actions {
+    position: absolute; right: 8px; top: 50%;
+    transform: translateY(-50%);
+    display: flex; gap: 6px;
+  }
+  .btn-run {
+    background: linear-gradient(135deg, var(--accent), #00c9a7);
+    color: #0a0a0f; border: none; border-radius: 8px;
+    padding: 8px 18px; font-family: 'Syne', sans-serif;
+    font-size: 13px; font-weight: 700; cursor: pointer;
+    transition: all 0.2s; letter-spacing: 0.5px;
+  }
+  .btn-run:hover { transform: scale(1.03); box-shadow: 0 0 16px rgba(0,245,196,0.4); }
+  .btn-run:active { transform: scale(0.98); }
+  .btn-clear {
+    background: var(--border); color: var(--muted);
+    border: none; border-radius: 8px; padding: 8px 12px;
+    font-size: 13px; cursor: pointer; transition: all 0.2s;
+  }
+  .btn-clear:hover { background: var(--card); color: var(--text); }
+  .example-queries { display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap; }
+  .example-chip {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 20px; padding: 5px 12px; font-size: 12px;
+    color: var(--muted); cursor: pointer; transition: all 0.2s; font-weight: 600;
+  }
+  .example-chip:hover { border-color: var(--accent); color: var(--accent); background: rgba(0,245,196,0.05); }
+
+  /* content */
+  .content { padding: 28px 40px; overflow-y: auto; }
+
+  .sql-block {
+    background: var(--card); border: 1px solid var(--border);
+    border-left: 3px solid var(--accent); border-radius: 12px;
+    padding: 16px 20px; margin-bottom: 24px;
+    animation: slideIn 0.4s ease;
+  }
+  @keyframes slideIn {
+    from { opacity: 0; transform: translateY(-10px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .sql-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+  .sql-label { font-size: 11px; font-weight: 700; letter-spacing: 2px; color: var(--accent); text-transform: uppercase; }
+  .sql-copy {
+    background: none; border: 1px solid var(--border);
+    color: var(--muted); border-radius: 6px; padding: 3px 10px;
+    font-size: 11px; cursor: pointer; transition: all 0.2s;
+  }
+  .sql-copy:hover { border-color: var(--accent); color: var(--accent); }
+  .sql-code { font-family: 'Space Mono', monospace; font-size: 13px; color: #c0c0d8; line-height: 1.6; }
+  .sql-keyword { color: var(--accent2); font-weight: 700; }
+  .sql-table { color: var(--accent); }
+  .sql-string { color: #ff9f7f; }
+  .sql-number { color: #7fccff; }
+
+  .stats-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 24px; }
+  .stat-card {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 12px; padding: 18px 20px; transition: all 0.2s;
+    animation: slideIn 0.4s ease;
+  }
+  .stat-card:hover { border-color: var(--accent); transform: translateY(-2px); }
+  .stat-label { font-size: 11px; font-weight: 600; color: var(--muted); letter-spacing: 1px; text-transform: uppercase; margin-bottom: 8px; }
+  .stat-value { font-size: 26px; font-weight: 800; line-height: 1; margin-bottom: 4px; }
+  .stat-sub { font-size: 12px; color: var(--muted); font-family: 'Space Mono', monospace; }
+  .stat-card:nth-child(1) .stat-value { color: var(--accent); }
+  .stat-card:nth-child(2) .stat-value { color: var(--accent2); }
+  .stat-card:nth-child(3) .stat-value { color: #ffd166; }
+  .stat-card:nth-child(4) .stat-value { color: var(--accent3); }
+
+  .charts-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 24px; }
+  .chart-card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 20px; animation: slideIn 0.5s ease; }
+  .chart-title { font-size: 13px; font-weight: 700; letter-spacing: 1px; color: var(--text); margin-bottom: 4px; }
+  .chart-sub { font-size: 11px; color: var(--muted); margin-bottom: 16px; }
+  .chart-container { position: relative; height: 200px; }
+
+  .table-card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; margin-bottom: 24px; animation: slideIn 0.5s ease; }
+  .table-header { display: flex; align-items: center; justify-content: space-between; padding: 16px 20px; border-bottom: 1px solid var(--border); }
+  .table-title { font-size: 14px; font-weight: 700; }
+  .table-count { font-family: 'Space Mono', monospace; font-size: 12px; color: var(--muted); }
+  table { width: 100%; border-collapse: collapse; }
+  thead th { background: rgba(42,42,62,0.5); padding: 10px 16px; text-align: left; font-size: 11px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; color: var(--muted); border-bottom: 1px solid var(--border); }
+  tbody tr { border-bottom: 1px solid rgba(42,42,62,0.5); transition: background 0.15s; }
+  tbody tr:hover { background: rgba(0,245,196,0.03); }
+  tbody tr:last-child { border-bottom: none; }
+  td { padding: 11px 16px; font-size: 13px; color: var(--text); font-family: 'Space Mono', monospace; }
+
+  .badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 700; }
+  .badge-green { background: rgba(0,245,196,0.15); color: var(--accent); }
+  .badge-purple { background: rgba(124,92,252,0.15); color: var(--accent2); }
+  .badge-red { background: rgba(255,107,107,0.15); color: var(--accent3); }
+  .badge-yellow { background: rgba(255,209,102,0.15); color: #ffd166; }
+
+  .logs-card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; }
+  .logs-header { display: flex; align-items: center; justify-content: space-between; padding: 14px 20px; border-bottom: 1px solid var(--border); }
+  .logs-title { font-size: 13px; font-weight: 700; color: var(--text); }
+  .logs-live { display: flex; align-items: center; gap: 6px; font-size: 11px; color: var(--accent); font-family: 'Space Mono', monospace; }
+  .log-body { padding: 12px 20px; max-height: 160px; overflow-y: auto; font-family: 'Space Mono', monospace; font-size: 12px; line-height: 2; }
+  .log-line { display: flex; gap: 12px; animation: fadeIn 0.3s ease; }
+  @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+  .log-time { color: var(--muted); }
+  .log-type-info { color: var(--accent2); }
+  .log-type-success { color: var(--accent); }
+  .log-type-warn { color: #ffd166; }
+  .log-type-error { color: var(--accent3); }
+  .log-msg { color: var(--text); }
+
+  .loading { display: none; align-items: center; gap: 10px; padding: 16px 0; font-size: 13px; color: var(--muted); font-family: 'Space Mono', monospace; }
+  .spinner { width: 18px; height: 18px; border: 2px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.7s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .empty-state { text-align: center; padding: 60px 0; color: var(--muted); }
+  .empty-state .emoji { font-size: 48px; margin-bottom: 16px; }
+  .empty-state p { font-size: 14px; line-height: 1.6; }
+
+  ::-webkit-scrollbar { width: 4px; height: 4px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--muted); }
+
+  .processing-steps { display: flex; gap: 0; margin-bottom: 20px; overflow: hidden; border-radius: 10px; border: 1px solid var(--border); }
+  .step { flex: 1; padding: 12px 10px; text-align: center; font-size: 11px; font-weight: 700; letter-spacing: 0.5px; color: var(--muted); background: var(--card); border-right: 1px solid var(--border); transition: all 0.3s; position: relative; }
+  .step:last-child { border-right: none; }
+  .step.done { color: var(--accent); background: rgba(0,245,196,0.06); }
+  .step.active { color: var(--text); background: rgba(124,92,252,0.1); }
+  .step-num { display: block; font-size: 18px; margin-bottom: 2px; }
 </style>
 </head>
 <body>
+<div class="app">
 
-<!-- HEADER -->
-<header>
-  <div class="logo">
-    <div class="logo-icon">🔍</div>
-    <div class="logo-text"><span>NLP</span><span>Query</span></div>
+  <header>
+    <div class="logo">
+      <div class="logo-icon">🧠</div>
+      <div class="logo-text">NLP<span>Query</span></div>
+    </div>
+    <div style="display:flex;gap:32px;align-items:center;">
+      <div style="font-size:13px;color:var(--muted);font-weight:600;">AI-Powered Data Retrieval System</div>
+      <div class="header-status">
+        <div class="status-dot"></div>
+        SYSTEM ONLINE
+      </div>
+    </div>
+  </header>
+
+  <div class="main">
+
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
+      <div class="sidebar-section">
+        <div class="sidebar-label">Navigation</div>
+        <div class="nav-item active" onclick="setNav(this)"><span class="icon">⚡</span> Query Interface</div>
+        <div class="nav-item" onclick="setNav(this)"><span class="icon">📊</span> Analytics</div>
+        <div class="nav-item" onclick="setNav(this)"><span class="icon">🗄️</span> Database</div>
+        <div class="nav-item" onclick="setNav(this)"><span class="icon">📋</span> Query History</div>
+        <div class="nav-item" onclick="setNav(this)"><span class="icon">⚙️</span> Settings</div>
+      </div>
+
+      <hr class="sidebar-divider">
+
+      <!-- ===== UPLOAD DATA FILE SECTION ===== -->
+      <div class="sidebar-section">
+        <div class="sidebar-label">Upload Data File</div>
+
+        <div class="upload-zone" id="uploadZone"
+             ondragover="handleDragOver(event)"
+             ondragleave="handleDragLeave(event)"
+             ondrop="handleDrop(event)">
+          <input type="file" id="fileInput" accept=".csv,.xlsx,.xls,.json,.tsv"
+                 onchange="handleFileSelect(event)">
+          <span class="upload-icon">📂</span>
+          <div class="upload-main-text">Drop file or click to browse</div>
+          <div class="upload-sub-text">Supported formats:</div>
+          <div class="upload-formats">
+            <span class="fmt-tag">CSV</span>
+            <span class="fmt-tag">XLSX</span>
+            <span class="fmt-tag">JSON</span>
+            <span class="fmt-tag">TSV</span>
+          </div>
+        </div>
+
+        <!-- Progress -->
+        <div class="upload-progress" id="uploadProgress">
+          <div class="progress-bar-bg">
+            <div class="progress-bar-fill" id="progressFill"></div>
+          </div>
+          <div class="progress-label" id="progressLabel">Parsing file...</div>
+        </div>
+
+        <!-- File loaded card -->
+        <div class="file-loaded" id="fileLoaded">
+          <div class="file-loaded-row">
+            <div style="font-size:20px;">📄</div>
+            <div class="file-loaded-info">
+              <div class="file-loaded-name" id="fileLoadedName">—</div>
+              <div class="file-loaded-meta" id="fileLoadedMeta">—</div>
+            </div>
+            <button class="file-remove-btn" onclick="removeFile()">✕</button>
+          </div>
+          <button class="file-preview-toggle" id="previewToggle" onclick="togglePreview()">▾ PREVIEW DATA</button>
+          <div class="file-data-preview" id="fileDataPreview"></div>
+        </div>
+      </div>
+      <!-- ===== END UPLOAD SECTION ===== -->
+
+      <hr class="sidebar-divider">
+
+      <div class="sidebar-section">
+        <div class="sidebar-label">Active Models</div>
+        <div class="model-badge active-model" onclick="selectModel(this)">
+          <div style="display:flex;align-items:center;gap:8px;">
+            <div class="model-dot" style="background:var(--accent)"></div>
+            <span style="font-size:13px;font-weight:600;">T5 Text-to-SQL</span>
+          </div>
+          <span class="model-acc">94.2%</span>
+        </div>
+        <div class="model-badge" onclick="selectModel(this)">
+          <div style="display:flex;align-items:center;gap:8px;">
+            <div class="model-dot" style="background:var(--accent2)"></div>
+            <span style="font-size:13px;font-weight:600;">BERT</span>
+          </div>
+          <span class="model-acc" style="color:var(--accent2)">91.7%</span>
+        </div>
+        <div class="model-badge" onclick="selectModel(this)">
+          <div style="display:flex;align-items:center;gap:8px;">
+            <div class="model-dot" style="background:#ffd166"></div>
+            <span style="font-size:13px;font-weight:600;">Zero-Shot</span>
+          </div>
+          <span class="model-acc" style="color:#ffd166">87.3%</span>
+        </div>
+      </div>
+
+      <hr class="sidebar-divider">
+
+      <div class="sidebar-section">
+        <div class="sidebar-label">Database</div>
+        <div style="padding:12px;background:var(--card);border-radius:10px;border:1px solid var(--border);" id="dbInfoBox">
+          <div style="font-size:12px;color:var(--muted);margin-bottom:6px;font-weight:600;">CONNECTED TO</div>
+          <div style="font-size:14px;font-weight:700;color:var(--accent);font-family:'Space Mono',monospace;" id="dbName">employees.db</div>
+          <div style="font-size:11px;color:var(--muted);margin-top:4px;" id="dbMeta">SQLite · 4 tables · 1,240 rows</div>
+        </div>
+      </div>
+    </aside>
+
+    <!-- RIGHT SIDE -->
+    <div style="display:flex;flex-direction:column;overflow:hidden;">
+
+      <!-- QUERY PANEL -->
+      <div class="query-panel">
+        <div class="panel-title">Natural Language Query</div>
+        <div class="query-wrapper">
+          <input type="text" class="query-input" id="queryInput"
+            placeholder="Ask anything in plain English... e.g. Show all employees in Sales department"/>
+          <div class="query-actions">
+            <button class="btn-clear" onclick="clearQuery()">Clear</button>
+            <button class="btn-run" onclick="runQuery()">▶ Run Query</button>
+          </div>
+        </div>
+
+        <!-- Active data source banner -->
+        <div class="data-source-banner" id="dataSourceBanner">
+          <span class="ds-icon">📂</span>
+          <span style="font-size:11px;color:var(--muted);">ACTIVE DATA:</span>
+          <span class="ds-name" id="bannerFileName">—</span>
+          <span class="ds-rows" id="bannerRows">—</span>
+        </div>
+
+        <div class="example-queries">
+          <span class="example-chip" onclick="setQuery(this)">Show all employees in Sales</span>
+          <span class="example-chip" onclick="setQuery(this)">Top 5 highest paid employees</span>
+          <span class="example-chip" onclick="setQuery(this)">Count employees by department</span>
+          <span class="example-chip" onclick="setQuery(this)">Employees hired after 2020</span>
+          <span class="example-chip" onclick="setQuery(this)">Average salary by department</span>
+        </div>
+      </div>
+
+      <!-- CONTENT -->
+      <div class="content" id="mainContent">
+        <div class="empty-state" id="emptyState">
+          <div class="emoji">🔍</div>
+          <p>Enter a natural language query above<br>and the AI will convert it to SQL automatically.</p>
+        </div>
+
+        <div class="loading" id="loadingState">
+          <div class="spinner"></div>
+          <span id="loadingMsg">Processing natural language...</span>
+        </div>
+
+        <div id="results" style="display:none;">
+          <div class="processing-steps" id="processingSteps">
+            <div class="step done" id="s1"><span class="step-num">✓</span>Tokenize</div>
+            <div class="step done" id="s2"><span class="step-num">✓</span>NER</div>
+            <div class="step done" id="s3"><span class="step-num">✓</span>Intent</div>
+            <div class="step done" id="s4"><span class="step-num">✓</span>SQL Gen</div>
+            <div class="step done" id="s5"><span class="step-num">✓</span>Execute</div>
+            <div class="step done" id="s6"><span class="step-num">✓</span>Visualize</div>
+          </div>
+
+          <div class="sql-block">
+            <div class="sql-header">
+              <span class="sql-label">Generated SQL</span>
+              <button class="sql-copy" onclick="copySQL()">📋 Copy</button>
+            </div>
+            <div class="sql-code" id="sqlOutput"></div>
+          </div>
+
+          <div class="stats-row">
+            <div class="stat-card">
+              <div class="stat-label">Rows Retrieved</div>
+              <div class="stat-value" id="statRows">—</div>
+              <div class="stat-sub">result records</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-label">Confidence</div>
+              <div class="stat-value" id="statConf">—</div>
+              <div class="stat-sub">model accuracy</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-label">Exec Time</div>
+              <div class="stat-value" id="statTime">—</div>
+              <div class="stat-sub">milliseconds</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-label">Tokens</div>
+              <div class="stat-value" id="statTokens">—</div>
+              <div class="stat-sub">processed</div>
+            </div>
+          </div>
+
+          <div class="charts-grid">
+            <div class="chart-card">
+              <div class="chart-title">Model Accuracy Comparison</div>
+              <div class="chart-sub">Performance across transformer models</div>
+              <div class="chart-container"><canvas id="modelChart"></canvas></div>
+            </div>
+            <div class="chart-card">
+              <div class="chart-title">Query Processing Time</div>
+              <div class="chart-sub">Last 10 queries in milliseconds</div>
+              <div class="chart-container"><canvas id="timeChart"></canvas></div>
+            </div>
+          </div>
+
+          <div class="table-card">
+            <div class="table-header">
+              <span class="table-title">Query Results</span>
+              <span class="table-count" id="tableCount">0 rows</span>
+            </div>
+            <div style="overflow-x:auto;">
+              <table>
+                <thead id="tableHead"></thead>
+                <tbody id="tableBody"></tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="logs-card">
+            <div class="logs-header">
+              <span class="logs-title">System Logs</span>
+              <span class="logs-live"><span class="status-dot" style="width:6px;height:6px;"></span>LIVE</span>
+            </div>
+            <div class="log-body" id="logBody"></div>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
-  <div class="header-right">
-    <div class="header-subtitle">AI-Powered Data Retrieval System · MongoDB</div>
-    <div class="status"><div class="status-dot"></div>SYSTEM ONLINE</div>
-  </div>
-</header>
-
-<div class="layout">
-
-  <!-- SIDEBAR -->
-  <aside>
-    <div class="nav-section">
-      <div class="nav-label">NAVIGATION</div>
-      <div class="nav-item active" onclick="setNav(this)"><span class="nav-icon">⚡</span> Query Interface</div>
-      <div class="nav-item" onclick="setNav(this)"><span class="nav-icon">📊</span> Analytics</div>
-      <div class="nav-item" onclick="setNav(this)"><span class="nav-icon">🗄️</span> Database</div>
-      <div class="nav-item" onclick="setNav(this)"><span class="nav-icon">📜</span> Query History</div>
-      <div class="nav-item" onclick="setNav(this)"><span class="nav-icon">⚙️</span> Settings</div>
-    </div>
-
-    <div class="nav-section">
-      <div class="nav-label">ACTIVE MODELS</div>
-      <div class="model-item active">
-        <div style="display:flex;align-items:center;gap:8px">
-          <div class="model-dot" style="background:var(--green)"></div>
-          <span>T5 Text-to-MQL</span>
-        </div>
-        <span class="model-acc" style="color:var(--green)">94.2%</span>
-      </div>
-      <div class="model-item">
-        <div style="display:flex;align-items:center;gap:8px">
-          <div class="model-dot" style="background:var(--purple)"></div>
-          <span>BERT</span>
-        </div>
-        <span class="model-acc" style="color:var(--purple)">91.7%</span>
-      </div>
-      <div class="model-item">
-        <div style="display:flex;align-items:center;gap:8px">
-          <div class="model-dot" style="background:var(--yellow)"></div>
-          <span>Zero-Shot</span>
-        </div>
-        <span class="model-acc" style="color:var(--yellow)">87.3%</span>
-      </div>
-    </div>
-
-    <div class="nav-section">
-      <div class="nav-label">DATABASE</div>
-      <div class="db-card">
-        <div class="db-label">CONNECTED TO</div>
-        <div class="db-name">employees_db</div>
-        <div class="db-meta">MongoDB · 4 collections · 1,240 docs</div>
-      </div>
-    </div>
-  </aside>
-
-  <!-- MAIN -->
-  <main id="mainContent">
-
-    <!-- QUERY SECTION -->
-    <div class="query-section">
-      <div class="section-label">NATURAL LANGUAGE QUERY</div>
-      <div class="query-bar">
-        <input class="query-input" id="queryInput" type="text" placeholder="Ask anything in plain English... e.g. Show all employees in Sales department" />
-        <button class="btn-clear" onclick="clearQuery()">Clear</button>
-        <button class="btn-run" onclick="runQuery()">▶ Run Query</button>
-      </div>
-      <div class="chips" id="chips">
-        <div class="chip" onclick="useChip(this)">Show all employees in Sales</div>
-        <div class="chip" onclick="useChip(this)">Top 5 highest paid employees</div>
-        <div class="chip" onclick="useChip(this)">Count employees by department</div>
-        <div class="chip" onclick="useChip(this)">Employees hired after 2020</div>
-        <div class="chip" onclick="useChip(this)">Average salary by department</div>
-      </div>
-    </div>
-
-    <!-- EMPTY STATE (shown before any query) -->
-    <div class="empty-state" id="emptyState">
-      <div class="empty-icon">🔍</div>
-      <div class="empty-text">Enter a natural language query above<br>and the AI will convert it to MongoDB automatically.</div>
-    </div>
-
-    <!-- RESULTS (hidden until query runs) -->
-    <div id="results" class="hidden">
-
-      <!-- PIPELINE -->
-      <div class="pipeline" id="pipeline">
-        <div class="step" id="s1"><span class="step-check">✓</span> Tokenize</div>
-        <div class="step" id="s2"><span class="step-check">✓</span> NER</div>
-        <div class="step" id="s3"><span class="step-check">✓</span> Intent</div>
-        <div class="step" id="s4"><span class="step-check">✓</span> MQL Gen</div>
-        <div class="step" id="s5"><span class="step-check">✓</span> Execute</div>
-        <div class="step" id="s6"><span class="step-check">✓</span> Visualize</div>
-      </div>
-
-      <!-- GENERATED MONGO QUERY -->
-      <div class="query-card">
-        <div class="query-card-header">
-          <span class="query-card-title">GENERATED MONGODB QUERY</span>
-          <button class="btn-copy" onclick="copyQuery()">📋 Copy</button>
-        </div>
-        <div class="query-code" id="generatedQuery"></div>
-      </div>
-
-      <!-- STATS -->
-      <div class="stats-row">
-        <div class="stat-card">
-          <div class="stat-label">DOCS RETRIEVED</div>
-          <div class="stat-val" id="statDocs" style="color:var(--green)">0</div>
-          <div class="stat-sub">result documents</div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-label">CONFIDENCE</div>
-          <div class="stat-val" id="statConf" style="color:var(--purple)">0%</div>
-          <div class="stat-sub">model accuracy</div>
-        </div>
-        <div class="stat-card highlight">
-          <div class="stat-label">EXEC TIME</div>
-          <div class="stat-val" id="statTime" style="color:var(--yellow)">0ms</div>
-          <div class="stat-sub">milliseconds</div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-label">TOKENS</div>
-          <div class="stat-val" id="statTokens" style="color:var(--red)">0</div>
-          <div class="stat-sub">processed</div>
-        </div>
-      </div>
-
-      <!-- CHARTS -->
-      <div class="charts-row">
-        <div class="chart-card">
-          <div class="chart-title">Model Accuracy Comparison</div>
-          <div class="chart-sub">Performance across transformer models</div>
-          <canvas id="barChart" height="180"></canvas>
-        </div>
-        <div class="chart-card">
-          <div class="chart-title">Query Processing Time</div>
-          <div class="chart-sub">Last 10 queries in milliseconds</div>
-          <canvas id="lineChart" height="180"></canvas>
-        </div>
-      </div>
-
-      <!-- RESULTS TABLE -->
-      <div class="table-card">
-        <div class="table-header">
-          <span class="table-title">Query Results</span>
-          <span class="table-count" id="tableCount">0 documents</span>
-        </div>
-        <div id="tableContainer"></div>
-      </div>
-
-      <!-- LOGS -->
-      <div class="logs-card">
-        <div class="logs-header">
-          <span class="logs-title">System Logs</span>
-          <div class="live-badge"><div class="live-dot"></div>LIVE</div>
-        </div>
-        <div class="logs-body" id="logsBody"></div>
-      </div>
-
-    </div>
-
-  </main>
 </div>
 
 <script>
-// ─── DATA ─────────────────────────────────────────────────────────────────────
-const QUERIES = {
-  "Show all employees in Sales": {
-    mql: `<span class="kw">db</span>.<span class="field">employees</span>.<span class="op">find</span>(\n  { <span class="field">department</span>: <span class="str">"Sales"</span> },\n  { <span class="field">_id</span>: <span class="val">0</span>, <span class="field">name</span>: <span class="val">1</span>, <span class="field">email</span>: <span class="val">1</span>, <span class="field">salary</span>: <span class="val">1</span>, <span class="field">hireDate</span>: <span class="val">1</span> }\n)`,
-    docs: 8, conf: "91%", time: "18ms", tokens: 5,
-    headers: ["NAME","EMAIL","SALARY","HIRE DATE","STATUS"],
-    rows: [
-      ["Alice Johnson","alice@corp.com","$79,200","2021-03-15",{badge:"active",cls:"high"}],
-      ["Bob Martinez","bob@corp.com","$84,500","2020-07-22",{badge:"active",cls:"high"}],
-      ["Carol White","carol@corp.com","$71,300","2022-01-10",{badge:"active",cls:"high"}],
-      ["David Brown","david@corp.com","$68,900","2019-11-05",{badge:"senior",cls:"medium"}],
-      ["Eva Green","eva@corp.com","$92,100","2021-09-18",{badge:"active",cls:"high"}],
-      ["Frank Lee","frank@corp.com","$75,400","2023-04-02",{badge:"new",cls:"medium"}],
-      ["Grace Kim","grace@corp.com","$88,000","2020-02-28",{badge:"senior",cls:"medium"}],
-      ["Henry Wu","henry@corp.com","$66,700","2022-08-14",{badge:"active",cls:"high"}],
+// ---- QUERY DATA ----
+const QUERY_DATA = {
+  "show all employees in sales": {
+    sql: `<span class="sql-keyword">SELECT</span> employee_id, name, department, salary, hire_date\n<span class="sql-keyword">FROM</span> <span class="sql-table">employees</span>\n<span class="sql-keyword">WHERE</span> department = <span class="sql-string">'Sales'</span>\n<span class="sql-keyword">ORDER BY</span> name <span class="sql-keyword">ASC</span>;`,
+    rows: 8, conf: "94%", time: "23", tokens: 9,
+    headers: ["ID", "Name", "Department", "Salary", "Hire Date", "Status"],
+    data: [
+      ["E001","Alice Johnson","Sales","$82,000","2019-03-12","active"],
+      ["E004","Bob Martinez","Sales","$74,500","2021-07-08","active"],
+      ["E011","Carol White","Sales","$91,200","2018-01-23","active"],
+      ["E015","David Lee","Sales","$68,000","2022-11-01","active"],
+      ["E022","Emma Davis","Sales","$79,800","2020-05-17","on-leave"],
+      ["E031","Frank Kim","Sales","$88,400","2017-09-30","active"],
+      ["E038","Grace Patel","Sales","$72,100","2023-02-14","active"],
+      ["E042","Hiro Tanaka","Sales","$83,600","2019-11-22","active"],
     ],
-    logs: [
-      ["INFO","Query received: \"Show all employees in Sales\""],
-      ["INFO","NLP preprocessing complete – 5 tokens"],
-      ["INFO","Intent detected: COLLECTION_FILTER"],
-      ["SUCCESS","MQL generated by T5 model (conf: 91%)"],
-      ["SUCCESS","Query executed in 18ms – 8 documents returned"],
-      ["SUCCESS","Results rendered successfully"],
-    ]
+    badges: { 5: {"active":"green","on-leave":"yellow","inactive":"red"} }
   },
-  "Top 5 highest paid employees": {
-    mql: `<span class="kw">db</span>.<span class="field">employees</span>.<span class="op">find</span>(\n  {},\n  { <span class="field">name</span>: <span class="val">1</span>, <span class="field">department</span>: <span class="val">1</span>, <span class="field">salary</span>: <span class="val">1</span> }\n).<span class="op">sort</span>({ <span class="field">salary</span>: <span class="val">-1</span> }).<span class="op">limit</span>(<span class="val">5</span>)`,
-    docs: 5, conf: "96%", time: "12ms", tokens: 6,
-    headers: ["NAME","DEPARTMENT","SALARY","RANK"],
-    rows: [
-      ["Sarah Connor","Management","$145,000",{badge:"#1",cls:"high"}],
-      ["James Wilson","Engineering","$138,500",{badge:"#2",cls:"high"}],
-      ["Linda Park","Engineering","$132,000",{badge:"#3",cls:"high"}],
-      ["Tom Bradley","Finance","$121,000",{badge:"#4",cls:"medium"}],
-      ["Nina Patel","Management","$119,800",{badge:"#5",cls:"medium"}],
+  "top 5 highest paid employees": {
+    sql: `<span class="sql-keyword">SELECT</span> employee_id, name, department, salary\n<span class="sql-keyword">FROM</span> <span class="sql-table">employees</span>\n<span class="sql-keyword">ORDER BY</span> salary <span class="sql-keyword">DESC</span>\n<span class="sql-keyword">LIMIT</span> <span class="sql-number">5</span>;`,
+    rows: 5, conf: "97%", time: "15", tokens: 7,
+    headers: ["ID","Name","Department","Salary","Rank"],
+    data: [
+      ["E077","Michael Scott","Management","$145,000","#1"],
+      ["E033","Sarah Connor","Engineering","$138,500","#2"],
+      ["E011","Carol White","Sales","$91,200","#3"],
+      ["E056","James Wilson","Engineering","$127,300","#4"],
+      ["E069","Lisa Park","Finance","$121,000","#5"],
     ],
-    logs: [
-      ["INFO","Query received: \"Top 5 highest paid employees\""],
-      ["INFO","NLP preprocessing complete – 6 tokens"],
-      ["INFO","Intent detected: SORT_LIMIT"],
-      ["SUCCESS","MQL generated by T5 model (conf: 96%)"],
-      ["SUCCESS","Query executed in 12ms – 5 documents returned"],
-      ["SUCCESS","Results rendered successfully"],
-    ]
+    badges: {}
   },
-  "Count employees by department": {
-    mql: `<span class="kw">db</span>.<span class="field">employees</span>.<span class="op">aggregate</span>([\n  { <span class="kw">$group</span>: { <span class="field">_id</span>: <span class="str">"$department"</span>, <span class="field">count</span>: { <span class="kw">$sum</span>: <span class="val">1</span> } } },\n  { <span class="kw">$sort</span>: { <span class="field">count</span>: <span class="val">-1</span> } },\n  { <span class="kw">$project</span>: { <span class="field">department</span>: <span class="str">"$_id"</span>, <span class="field">count</span>: <span class="val">1</span>, <span class="field">_id</span>: <span class="val">0</span> } }\n])`,
-    docs: 6, conf: "94%", time: "21ms", tokens: 4,
-    headers: ["DEPARTMENT","EMPLOYEE COUNT","PERCENTAGE","SIZE"],
-    rows: [
-      ["Engineering","287","23.1%",{badge:"Large",cls:"high"}],
-      ["Sales","241","19.4%",{badge:"Large",cls:"high"}],
-      ["Operations","198","15.9%",{badge:"Medium",cls:"medium"}],
-      ["Finance","176","14.2%",{badge:"Medium",cls:"medium"}],
-      ["Marketing","164","13.2%",{badge:"Medium",cls:"medium"}],
-      ["Management","174","14.0%",{badge:"Medium",cls:"medium"}],
+  "count employees by department": {
+    sql: `<span class="sql-keyword">SELECT</span> department, <span class="sql-keyword">COUNT</span>(*) <span class="sql-keyword">AS</span> total_employees\n<span class="sql-keyword">FROM</span> <span class="sql-table">employees</span>\n<span class="sql-keyword">GROUP BY</span> department\n<span class="sql-keyword">ORDER BY</span> total_employees <span class="sql-keyword">DESC</span>;`,
+    rows: 6, conf: "96%", time: "18", tokens: 6,
+    headers: ["Department","Total Employees","% of Total","Avg Salary"],
+    data: [
+      ["Engineering","312","25.2%","$118,400"],
+      ["Sales","287","23.1%","$79,800"],
+      ["Operations","198","16.0%","$68,200"],
+      ["Marketing","156","12.6%","$85,600"],
+      ["Finance","142","11.5%","$95,100"],
+      ["Management","44","3.6%","$132,000"],
     ],
-    logs: [
-      ["INFO","Query received: \"Count employees by department\""],
-      ["INFO","NLP preprocessing complete – 4 tokens"],
-      ["INFO","Intent detected: AGGREGATION_GROUP"],
-      ["SUCCESS","MQL generated by T5 model (conf: 94%)"],
-      ["SUCCESS","Aggregation executed in 21ms – 6 groups returned"],
-      ["SUCCESS","Results rendered successfully"],
-    ]
+    badges: {}
   },
-  "Employees hired after 2020": {
-    mql: `<span class="kw">db</span>.<span class="field">employees</span>.<span class="op">find</span>({\n  <span class="field">hireDate</span>: { <span class="kw">$gt</span>: <span class="kw">new Date</span>(<span class="str">"2020-12-31"</span>) }\n},{\n  <span class="field">name</span>: <span class="val">1</span>, <span class="field">department</span>: <span class="val">1</span>, <span class="field">hireDate</span>: <span class="val">1</span>, <span class="field">salary</span>: <span class="val">1</span>\n}).<span class="op">sort</span>({ <span class="field">hireDate</span>: <span class="val">-1</span> })`,
-    docs: 7, conf: "89%", time: "24ms", tokens: 5,
-    headers: ["NAME","DEPARTMENT","HIRE DATE","SALARY","TENURE"],
-    rows: [
-      ["Frank Lee","Sales","2023-04-02","$75,400",{badge:"New",cls:"medium"}],
-      ["Henry Wu","Sales","2022-08-14","$66,700",{badge:"New",cls:"medium"}],
-      ["Carol White","Sales","2022-01-10","$71,300",{badge:"New",cls:"medium"}],
-      ["Eva Green","Sales","2021-09-18","$92,100",{badge:"Active",cls:"high"}],
-      ["Alice Johnson","Sales","2021-03-15","$79,200",{badge:"Active",cls:"high"}],
-      ["Ryan Torres","Engineering","2021-11-22","$105,000",{badge:"Active",cls:"high"}],
-      ["Mia Chen","Finance","2021-06-05","$87,500",{badge:"Active",cls:"high"}],
+  "employees hired after 2020": {
+    sql: `<span class="sql-keyword">SELECT</span> employee_id, name, department, hire_date\n<span class="sql-keyword">FROM</span> <span class="sql-table">employees</span>\n<span class="sql-keyword">WHERE</span> hire_date > <span class="sql-string">'2020-12-31'</span>\n<span class="sql-keyword">ORDER BY</span> hire_date <span class="sql-keyword">DESC</span>;`,
+    rows: 7, conf: "95%", time: "21", tokens: 7,
+    headers: ["ID","Name","Department","Hire Date","Experience"],
+    data: [
+      ["E091","Noah Adams","Engineering","2023-08-14","< 1 yr"],
+      ["E038","Grace Patel","Sales","2023-02-14","< 1 yr"],
+      ["E082","Mia Turner","Marketing","2022-10-05","1 yr"],
+      ["E015","David Lee","Sales","2022-11-01","1 yr"],
+      ["E074","Liam Chen","Finance","2022-04-19","1 yr"],
+      ["E067","Olivia Brown","Operations","2021-09-28","2 yrs"],
+      ["E004","Bob Martinez","Sales","2021-07-08","2 yrs"],
     ],
-    logs: [
-      ["INFO","Query received: \"Employees hired after 2020\""],
-      ["INFO","NLP preprocessing complete – 5 tokens"],
-      ["INFO","Intent detected: DATE_FILTER"],
-      ["SUCCESS","MQL generated by T5 model (conf: 89%)"],
-      ["SUCCESS","Query executed in 24ms – 7 documents returned"],
-      ["SUCCESS","Results rendered successfully"],
-    ]
+    badges: {}
   },
-  "Average salary by department": {
-    mql: `<span class="kw">db</span>.<span class="field">employees</span>.<span class="op">aggregate</span>([\n  { <span class="kw">$group</span>: {\n    <span class="field">_id</span>: <span class="str">"$department"</span>,\n    <span class="field">avgSalary</span>: { <span class="kw">$avg</span>: <span class="str">"$salary"</span> },\n    <span class="field">minSalary</span>: { <span class="kw">$min</span>: <span class="str">"$salary"</span> },\n    <span class="field">maxSalary</span>: { <span class="kw">$max</span>: <span class="str">"$salary"</span> }\n  }},\n  { <span class="kw">$sort</span>: { <span class="field">avgSalary</span>: <span class="val">-1</span> } }\n])`,
-    docs: 6, conf: "93%", time: "26ms", tokens: 6,
-    headers: ["DEPARTMENT","AVG SALARY","MIN SALARY","MAX SALARY","RANGE"],
-    rows: [
-      ["Management","$132,000","$98,000","$145,000",{badge:"High",cls:"high"}],
-      ["Engineering","$118,400","$86,000","$138,500",{badge:"High",cls:"high"}],
-      ["Finance","$95,100","$72,000","$121,000",{badge:"Medium",cls:"medium"}],
-      ["Marketing","$85,600","$64,000","$112,000",{badge:"Medium",cls:"medium"}],
-      ["Sales","$79,800","$68,000","$91,200",{badge:"Medium",cls:"medium"}],
-      ["Operations","$68,200","$52,000","$88,000",{badge:"Low",cls:"low"}],
+  "average salary by department": {
+    sql: `<span class="sql-keyword">SELECT</span> department, <span class="sql-keyword">AVG</span>(salary) <span class="sql-keyword">AS</span> avg_salary,\n       <span class="sql-keyword">MIN</span>(salary) <span class="sql-keyword">AS</span> min_salary, <span class="sql-keyword">MAX</span>(salary) <span class="sql-keyword">AS</span> max_salary\n<span class="sql-keyword">FROM</span> <span class="sql-table">employees</span>\n<span class="sql-keyword">GROUP BY</span> department\n<span class="sql-keyword">ORDER BY</span> avg_salary <span class="sql-keyword">DESC</span>;`,
+    rows: 6, conf: "93%", time: "26", tokens: 6,
+    headers: ["Department","Avg Salary","Min Salary","Max Salary","Range"],
+    data: [
+      ["Management","$132,000","$98,000","$145,000","High"],
+      ["Finance","$95,100","$72,000","$121,000","Medium"],
+      ["Engineering","$118,400","$86,000","$138,500","High"],
+      ["Marketing","$85,600","$64,000","$112,000","Medium"],
+      ["Sales","$79,800","$68,000","$91,200","Medium"],
+      ["Operations","$68,200","$52,000","$88,000","Low"],
     ],
-    logs: [
-      ["INFO","Query received: \"Average salary by department\""],
-      ["INFO","NLP preprocessing complete – 6 tokens"],
-      ["INFO","Intent detected: AGGREGATION_AVG"],
-      ["SUCCESS","MQL generated by T5 model (conf: 93%)"],
-      ["SUCCESS","Aggregation executed in 26ms – 6 groups returned"],
-      ["SUCCESS","Visualizations rendered"],
-    ]
+    badges: { 4: {"High":"purple","Medium":"yellow","Low":"red"} }
   }
 };
 
-let barChart, lineChart, activeQuery = null;
+let modelChart = null, timeChart = null;
+const timeHistory = [28,19,35,22,41,18,29,24,31,20];
 
-function setNav(el) {
-  document.querySelectorAll('.nav-item').forEach(e=>e.classList.remove('active'));
-  el.classList.add('active');
+// ---- UPLOADED FILE STATE ----
+let uploadedFileData = null; // { name, rows, cols, headers, preview }
+let previewOpen = false;
+
+function normalize(s) {
+  return s.toLowerCase().replace(/[^a-z0-9 ]/g,'').trim();
 }
-
-function useChip(el) {
-  document.getElementById('queryInput').value = el.textContent.trim();
-  runQuery();
-}
-
+function setQuery(el) { document.getElementById('queryInput').value = el.textContent; }
 function clearQuery() {
   document.getElementById('queryInput').value = '';
-  document.getElementById('results').classList.add('hidden');
-  document.getElementById('emptyState').classList.remove('hidden');
-  activeQuery = null;
+  document.getElementById('emptyState').style.display = 'block';
+  document.getElementById('results').style.display = 'none';
+  document.getElementById('loadingState').style.display = 'none';
+}
+function setNav(el) {
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  el.classList.add('active');
+}
+function selectModel(el) {
+  document.querySelectorAll('.model-badge').forEach(m => m.classList.remove('active-model'));
+  el.classList.add('active-model');
+}
+function copySQL() {
+  const txt = document.getElementById('sqlOutput').innerText;
+  navigator.clipboard.writeText(txt).catch(()=>{});
+  const btn = document.querySelector('.sql-copy');
+  btn.textContent = '✓ Copied';
+  setTimeout(()=> btn.textContent = '📋 Copy', 1500);
+}
+function addLog(type, msg) {
+  const lb = document.getElementById('logBody');
+  const time = new Date().toTimeString().slice(0,8);
+  const div = document.createElement('div');
+  div.className = 'log-line';
+  div.innerHTML = `<span class="log-time">${time}</span><span class="log-type-${type}">[${type.toUpperCase()}]</span><span class="log-msg">${msg}</span>`;
+  lb.appendChild(div);
+  lb.scrollTop = lb.scrollHeight;
+}
+async function sleep(ms) { return new Promise(r=>setTimeout(r,ms)); }
+
+// ---- DRAG AND DROP ----
+function handleDragOver(e) {
+  e.preventDefault();
+  document.getElementById('uploadZone').classList.add('drag-over');
+}
+function handleDragLeave(e) {
+  document.getElementById('uploadZone').classList.remove('drag-over');
+}
+function handleDrop(e) {
+  e.preventDefault();
+  document.getElementById('uploadZone').classList.remove('drag-over');
+  const file = e.dataTransfer.files[0];
+  if (file) processFile(file);
+}
+function handleFileSelect(e) {
+  const file = e.target.files[0];
+  if (file) processFile(file);
 }
 
-async function runQuery() {
-  const val = document.getElementById('queryInput').value.trim();
-  if (!val) return;
-
-  const data = QUERIES[val] || QUERIES["Average salary by department"];
-  activeQuery = data;
-
-  // Show results, hide empty
-  document.getElementById('emptyState').classList.add('hidden');
-  document.getElementById('results').classList.remove('hidden');
-
-  // Animate pipeline
-  const steps = ['s1','s2','s3','s4','s5','s6'];
-  steps.forEach(id => {
-    const el = document.getElementById(id);
-    el.classList.remove('done','active');
-  });
-
-  for (let i=0; i<steps.length; i++) {
-    await delay(180);
-    if (i > 0) document.getElementById(steps[i-1]).classList.replace('active','done');
-    document.getElementById(steps[i]).classList.add('active');
+// ---- FILE PROCESSING ----
+function processFile(file) {
+  const ext = file.name.split('.').pop().toLowerCase();
+  const allowed = ['csv','tsv','json','xlsx','xls'];
+  if (!allowed.includes(ext)) {
+    alert('Unsupported file format. Please upload CSV, TSV, JSON, or XLSX.');
+    return;
   }
-  await delay(180);
-  document.getElementById(steps[steps.length-1]).classList.replace('active','done');
 
-  // Set query
-  document.getElementById('generatedQuery').innerHTML = data.mql;
+  // Show progress
+  const prog = document.getElementById('uploadProgress');
+  const fill = document.getElementById('progressFill');
+  const label = document.getElementById('progressLabel');
+  prog.style.display = 'block';
+  fill.style.width = '0%';
+  label.textContent = 'Reading file...';
 
-  // Animate stats
-  animateVal('statDocs', data.docs, '', 600);
-  document.getElementById('statConf').textContent = data.conf;
-  document.getElementById('statTime').textContent = data.time;
-  document.getElementById('statTokens').textContent = data.tokens;
+  let pct = 0;
+  const interval = setInterval(()=>{
+    pct = Math.min(pct + Math.random()*25, 90);
+    fill.style.width = pct + '%';
+  }, 80);
 
-  // Render charts
-  renderCharts();
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    clearInterval(interval);
+    fill.style.width = '100%';
+    label.textContent = 'Parsing data...';
 
-  // Render table
-  renderTable(data);
+    setTimeout(()=>{
+      prog.style.display = 'none';
+      fill.style.width = '0%';
 
-  // Render logs
-  renderLogs(data.logs);
+      let parsed = null;
+      try {
+        if (ext === 'json') {
+          parsed = parseJSON(e.target.result);
+        } else if (ext === 'csv' || ext === 'tsv') {
+          const delimiter = ext === 'tsv' ? '\t' : ',';
+          parsed = parseCSV(e.target.result, delimiter);
+        } else {
+          // For XLSX show a friendly message
+          parsed = { headers: ['[XLSX]'], rows: [], rowCount: '?' , note: 'XLSX preview not available in browser. File registered.' };
+        }
+      } catch(err) {
+        console.error(err);
+        parsed = { headers: ['Error'], rows: [[err.message]], rowCount: 0 };
+      }
+
+      const sizeFmt = file.size > 1024*1024
+        ? (file.size/(1024*1024)).toFixed(1) + ' MB'
+        : (file.size/1024).toFixed(1) + ' KB';
+
+      uploadedFileData = {
+        name: file.name,
+        size: sizeFmt,
+        ext: ext.toUpperCase(),
+        rows: parsed.rowCount,
+        cols: parsed.headers.length,
+        headers: parsed.headers,
+        preview: parsed.rows.slice(0, 5)
+      };
+
+      showFileLoaded();
+    }, 300);
+  };
+
+  if (ext === 'xlsx' || ext === 'xls') {
+    reader.readAsArrayBuffer(file);
+  } else {
+    reader.readAsText(file);
+  }
 }
 
-function delay(ms) { return new Promise(r => setTimeout(r, ms)); }
-
-function animateVal(id, target, suffix, dur) {
-  const el = document.getElementById(id);
-  const start = Date.now();
-  const tick = () => {
-    const p = Math.min((Date.now()-start)/dur, 1);
-    el.textContent = Math.round(target*p) + suffix;
-    if (p < 1) requestAnimationFrame(tick);
-  };
-  requestAnimationFrame(tick);
+function parseCSV(text, delimiter=',') {
+  const lines = text.trim().split('\n').filter(l=>l.trim());
+  if (!lines.length) return { headers:[], rows:[], rowCount:0 };
+  const headers = lines[0].split(delimiter).map(h=>h.trim().replace(/^"|"$/g,''));
+  const rows = lines.slice(1).map(l => {
+    return l.split(delimiter).map(c=>c.trim().replace(/^"|"$/g,''));
+  });
+  return { headers, rows, rowCount: rows.length };
 }
 
-function renderCharts() {
-  if (barChart) barChart.destroy();
-  if (lineChart) lineChart.destroy();
+function parseJSON(text) {
+  const data = JSON.parse(text);
+  const arr = Array.isArray(data) ? data : (data.data || data.records || Object.values(data)[0] || []);
+  if (!arr.length) return { headers:[], rows:[], rowCount:0 };
+  const headers = Object.keys(arr[0]);
+  const rows = arr.map(obj => headers.map(h => String(obj[h] ?? '')));
+  return { headers, rows, rowCount: rows.length };
+}
 
-  const chartDefaults = {
-    plugins: { legend: { display: false } },
-    scales: {
-      x: { grid: { color: '#262d3d' }, ticks: { color: '#5a6480', font: { family: 'JetBrains Mono', size: 11 } } },
-      y: { grid: { color: '#262d3d' }, ticks: { color: '#5a6480', font: { family: 'JetBrains Mono', size: 11 } } }
-    }
-  };
+function showFileLoaded() {
+  const fd = uploadedFileData;
+  document.getElementById('fileLoadedName').textContent = fd.name;
+  document.getElementById('fileLoadedMeta').textContent = `${fd.ext} · ${fd.rows} rows · ${fd.cols} cols · ${fd.size}`;
+  document.getElementById('fileLoaded').style.display = 'block';
 
-  barChart = new Chart(document.getElementById('barChart'), {
+  // Render preview table
+  const prev = document.getElementById('fileDataPreview');
+  if (fd.preview && fd.preview.length) {
+    let html = '<table><thead><tr>';
+    fd.headers.forEach(h => { html += `<th>${h}</th>`; });
+    html += '</tr></thead><tbody>';
+    fd.preview.forEach(row => {
+      html += '<tr>' + row.map(c=>`<td>${c}</td>`).join('') + '</tr>';
+    });
+    html += '</tbody></table>';
+    prev.innerHTML = html;
+  } else {
+    prev.innerHTML = '<span style="color:var(--muted);">No preview available</span>';
+  }
+
+  // Update DB info box
+  document.getElementById('dbName').textContent = fd.name;
+  document.getElementById('dbMeta').textContent = `Uploaded · 1 table · ${fd.rows} rows`;
+
+  // Show banner in query panel
+  const banner = document.getElementById('dataSourceBanner');
+  banner.style.display = 'flex';
+  document.getElementById('bannerFileName').textContent = fd.name;
+  document.getElementById('bannerRows').textContent = fd.rows + ' rows';
+
+  // Update example chips to reflect uploaded data
+  updateExampleChipsForUpload(fd.headers);
+
+  addLog && null; // no log yet, wait for user query
+}
+
+function updateExampleChipsForUpload(headers) {
+  if (!headers || !headers.length) return;
+  const chips = document.querySelectorAll('.example-chip');
+  const col1 = headers[0] || 'column';
+  const col2 = headers[1] || headers[0] || 'column';
+  const suggestions = [
+    `Show all ${col1}`,
+    `Count by ${col2}`,
+    `Top 5 by ${col2}`,
+    `Show all rows`,
+    `Average of ${col2}`,
+  ];
+  chips.forEach((chip, i) => {
+    if (suggestions[i]) chip.textContent = suggestions[i];
+  });
+}
+
+function togglePreview() {
+  previewOpen = !previewOpen;
+  const prev = document.getElementById('fileDataPreview');
+  const btn = document.getElementById('previewToggle');
+  prev.style.display = previewOpen ? 'block' : 'none';
+  btn.textContent = previewOpen ? '▴ HIDE PREVIEW' : '▾ PREVIEW DATA';
+}
+
+function removeFile() {
+  uploadedFileData = null;
+  previewOpen = false;
+  document.getElementById('fileLoaded').style.display = 'none';
+  document.getElementById('fileDataPreview').style.display = 'none';
+  document.getElementById('previewToggle').textContent = '▾ PREVIEW DATA';
+  document.getElementById('fileInput').value = '';
+  document.getElementById('dataSourceBanner').style.display = 'none';
+  document.getElementById('dbName').textContent = 'employees.db';
+  document.getElementById('dbMeta').textContent = 'SQLite · 4 tables · 1,240 rows';
+  // Reset example chips
+  const defaults = ['Show all employees in Sales','Top 5 highest paid employees','Count employees by department','Employees hired after 2020','Average salary by department'];
+  document.querySelectorAll('.example-chip').forEach((c,i)=>{ if(defaults[i]) c.textContent=defaults[i]; });
+}
+
+// ---- RUN QUERY ----
+async function runQuery() {
+  const raw = document.getElementById('queryInput').value.trim();
+  if (!raw) return;
+
+  document.getElementById('emptyState').style.display = 'none';
+  document.getElementById('results').style.display = 'none';
+  const loading = document.getElementById('loadingState');
+  loading.style.display = 'flex';
+
+  const msgs = [
+    "Tokenizing input...",
+    "Removing stopwords...",
+    "Running Named Entity Recognition...",
+    "Detecting intent...",
+    uploadedFileData
+      ? `Mapping query to uploaded file: ${uploadedFileData.name}...`
+      : "Generating SQL with T5 model...",
+    "Executing query on database...",
+    "Building visualizations..."
+  ];
+
+  for (let i = 0; i < msgs.length; i++) {
+    document.getElementById('loadingMsg').textContent = msgs[i];
+    await sleep(200);
+  }
+
+  loading.style.display = 'none';
+
+  const key = normalize(raw);
+  let qd = null;
+  for (const k of Object.keys(QUERY_DATA)) {
+    if (key.includes(normalize(k)) || normalize(k).includes(key)) { qd = QUERY_DATA[k]; break; }
+  }
+  if (!qd) qd = QUERY_DATA["count employees by department"];
+
+  // If file uploaded, override SQL table name
+  let sqlOutput = qd.sql;
+  if (uploadedFileData) {
+    const tname = uploadedFileData.name.replace(/\.[^.]+$/, '').replace(/[^a-zA-Z0-9_]/g, '_');
+    sqlOutput = sqlOutput.replace(/employees/g, tname);
+  }
+
+  document.getElementById('results').style.display = 'block';
+  document.getElementById('sqlOutput').innerHTML = sqlOutput;
+  document.getElementById('statRows').textContent = uploadedFileData ? uploadedFileData.rows : qd.rows;
+  document.getElementById('statConf').textContent = qd.conf;
+  document.getElementById('statTime').textContent = qd.time + "ms";
+  document.getElementById('statTokens').textContent = qd.tokens;
+
+  // Table — use uploaded data preview if available
+  const thead = document.getElementById('tableHead');
+  const tbody = document.getElementById('tableBody');
+
+  if (uploadedFileData && uploadedFileData.preview.length) {
+    thead.innerHTML = '<tr>' + uploadedFileData.headers.map(h=>`<th>${h}</th>`).join('') + '</tr>';
+    tbody.innerHTML = '';
+    uploadedFileData.preview.forEach(row => {
+      const tr = document.createElement('tr');
+      tr.innerHTML = row.map(c=>`<td>${c}</td>`).join('');
+      tbody.appendChild(tr);
+    });
+    document.getElementById('tableCount').textContent = uploadedFileData.rows + ' rows (preview: 5)';
+  } else {
+    thead.innerHTML = '<tr>' + qd.headers.map(h=>`<th>${h}</th>`).join('') + '</tr>';
+    tbody.innerHTML = '';
+    qd.data.forEach(row => {
+      const tr = document.createElement('tr');
+      tr.innerHTML = row.map((cell, ci) => {
+        if (qd.badges[ci]) {
+          const colorKey = qd.badges[ci][cell] || 'green';
+          return `<td><span class="badge badge-${colorKey}">${cell}</span></td>`;
+        }
+        return `<td>${cell}</td>`;
+      }).join('');
+      tbody.appendChild(tr);
+    });
+    document.getElementById('tableCount').textContent = qd.rows + ' rows';
+  }
+
+  buildCharts();
+
+  document.getElementById('logBody').innerHTML = '';
+  const src = uploadedFileData ? uploadedFileData.name : 'employees.db';
+  const logs = [
+    ['info', `Query received: "${raw.slice(0,50)}"`],
+    ['info', `Data source: ${src}`],
+    ['info', 'NLP preprocessing complete — ' + qd.tokens + ' tokens'],
+    ['info', 'Intent detected: DATA_RETRIEVAL'],
+    ['success', 'SQL generated by T5 model (conf: ' + qd.conf + ')'],
+    ['success', 'Query executed in ' + qd.time + 'ms — ' + (uploadedFileData ? uploadedFileData.rows : qd.rows) + ' rows'],
+    ['success', 'Visualizations rendered'],
+  ];
+  for (const [t,m] of logs) addLog(t, m);
+
+  for (let i=1; i<=6; i++) {
+    document.getElementById('s'+i).className = 'step done';
+    document.getElementById('s'+i).querySelector('.step-num').textContent = '✓';
+  }
+  document.querySelector('.content').scrollTop = 0;
+  timeHistory.push(parseInt(qd.time));
+  timeHistory.shift();
+}
+
+function buildCharts() {
+  Chart.defaults.color = '#6b6b8a';
+  Chart.defaults.font.family = "'Space Mono', monospace";
+  Chart.defaults.font.size = 11;
+  if (modelChart) modelChart.destroy();
+  if (timeChart) timeChart.destroy();
+  const gridColor = 'rgba(42,42,62,0.6)';
+  modelChart = new Chart(document.getElementById('modelChart'), {
     type: 'bar',
     data: {
-      labels: ['T5 Text-to-MQL','BERT','Zero-Shot','GPT-Baseline'],
+      labels: ['T5 Text-to-SQL','BERT','Zero-Shot','GPT-Baseline'],
       datasets: [{
-        data: [94.2, 91.7, 87.3, 83.1],
-        backgroundColor: ['#00e5a0','#7c5af5','#f5c842','#f55a5a'],
-        borderRadius: 6,
+        data: [94.2,91.7,87.3,89.1],
+        backgroundColor: ['rgba(0,245,196,0.7)','rgba(124,92,252,0.7)','rgba(255,209,102,0.7)','rgba(255,107,107,0.7)'],
+        borderColor: ['#00f5c4','#7c5cfc','#ffd166','#ff6b6b'],
+        borderWidth: 1, borderRadius: 4,
       }]
     },
-    options: { ...chartDefaults, scales: { ...chartDefaults.scales, y: { ...chartDefaults.scales.y, min:80, max:100 } } }
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: {
+        y: { min:80, max:100, grid:{color:gridColor}, ticks:{callback:v=>v+'%'} },
+        x: { grid:{display:false} }
+      }
+    }
   });
-
-  const times = [28,20,35,30,41,25,18,38,30,20];
-  lineChart = new Chart(document.getElementById('lineChart'), {
+  timeChart = new Chart(document.getElementById('timeChart'), {
     type: 'line',
     data: {
-      labels: ['Q1','Q2','Q3','Q4','Q5','Q6','Q7','Q8','Q9','Q10'],
+      labels: timeHistory.map((_,i)=>'Q'+(i+1)),
       datasets: [{
-        data: times,
-        borderColor: '#00e5a0',
-        backgroundColor: 'rgba(0,229,160,0.08)',
-        fill: true,
-        tension: 0.4,
-        pointBackgroundColor: '#00e5a0',
-        pointRadius: 4,
-        borderWidth: 2,
+        data: timeHistory,
+        borderColor: '#00f5c4',
+        backgroundColor: 'rgba(0,245,196,0.08)',
+        fill: true, tension: 0.4,
+        pointBackgroundColor: '#00f5c4',
+        pointRadius: 3, borderWidth: 2,
       }]
     },
-    options: chartDefaults
-  });
-}
-
-function renderTable(data) {
-  document.getElementById('tableCount').textContent = data.docs + ' documents';
-  const headers = data.headers.map(h => `<th>${h}</th>`).join('');
-  const rows = data.rows.map(row => {
-    const cells = row.map(cell => {
-      if (typeof cell === 'object' && cell.badge !== undefined) {
-        return `<td><span class="badge ${cell.cls}">${cell.badge}</span></td>`;
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: {
+        y: { grid:{color:gridColor}, ticks:{callback:v=>v+'ms'} },
+        x: { grid:{display:false} }
       }
-      return `<td>${cell}</td>`;
-    }).join('');
-    return `<tr>${cells}</tr>`;
-  }).join('');
-  document.getElementById('tableContainer').innerHTML = `<table><thead><tr>${headers}</tr></thead><tbody>${rows}</tbody></table>`;
-}
-
-function renderLogs(logs) {
-  const now = new Date();
-  const timeStr = now.toTimeString().slice(0,8);
-  const lines = logs.map(([type, msg]) => {
-    const cls = type === 'INFO' ? 'log-info' : type === 'SUCCESS' ? 'log-success' : 'log-warn';
-    return `<div class="log-line"><span class="log-time">${timeStr}</span><span class="${cls}">[${type}]</span><span class="log-text">${msg}</span></div>`;
-  }).join('');
-  document.getElementById('logsBody').innerHTML = lines;
-}
-
-function copyQuery() {
-  const text = document.getElementById('generatedQuery').innerText;
-  navigator.clipboard.writeText(text).then(()=>{
-    const btn = document.querySelector('.btn-copy');
-    btn.textContent = '✅ Copied!';
-    setTimeout(()=>btn.textContent='📋 Copy', 2000);
+    }
   });
 }
+
+document.getElementById('queryInput').addEventListener('keydown', e => {
+  if (e.key === 'Enter') runQuery();
+});
 </script>
 </body>
 </html>
