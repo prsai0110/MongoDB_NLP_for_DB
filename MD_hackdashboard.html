@@ -3,225 +3,505 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>MongoDB Query Generator</title>
-<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;700&family=Outfit:wght@300;400;600;700;900&display=swap" rel="stylesheet">
+<title>MongoQuery — AI-Powered Query Generator</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <style>
-  :root {
-    --bg:#0d1117; --surface:#161b22; --card:#1c2330; --border:#30363d;
-    --mg-green:#00ed64; --mg-dark:#00684a; --amber:#f59e0b;
-    --red:#ef4444; --blue:#3b82f6; --text:#e6edf3; --muted:#7d8590;
-    --glow:0 0 28px rgba(0,237,100,0.18); --glow-sm:0 0 12px rgba(0,237,100,0.12);
-  }
-  *{margin:0;padding:0;box-sizing:border-box;}
-  body{background:var(--bg);color:var(--text);font-family:'Outfit',sans-serif;min-height:100vh;overflow-x:hidden;}
-  body::before{content:'';position:fixed;inset:0;background-image:radial-gradient(rgba(0,237,100,0.06) 1px,transparent 1px);background-size:28px 28px;pointer-events:none;z-index:0;}
-  body::after{content:'';position:fixed;bottom:-150px;left:-150px;width:500px;height:500px;background:radial-gradient(circle,rgba(0,237,100,0.07) 0%,transparent 70%);pointer-events:none;z-index:0;}
-  .app{position:relative;z-index:1;display:flex;flex-direction:column;height:100vh;}
+:root {
+  --bg: #080c10;
+  --surface: #0e1419;
+  --card: #131920;
+  --card2: #161d26;
+  --border: #1e2a36;
+  --border2: #253040;
+  --green: #00f580;
+  --green-dim: #00c060;
+  --green-dark: #004a28;
+  --blue: #4db8ff;
+  --amber: #ffb340;
+  --red: #ff4f4f;
+  --purple: #b48eff;
+  --text: #dce8f0;
+  --text2: #8fa3b5;
+  --text3: #4d6070;
+  --glow: 0 0 32px rgba(0,245,128,0.15);
+  --glow-sm: 0 0 14px rgba(0,245,128,0.1);
+}
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
 
-  header{display:flex;align-items:center;justify-content:space-between;padding:0 32px;height:60px;border-bottom:1px solid var(--border);background:rgba(13,17,23,0.92);backdrop-filter:blur(16px);position:sticky;top:0;z-index:200;flex-shrink:0;}
-  .logo{display:flex;align-items:center;gap:10px;}
-  .logo-leaf{width:32px;height:32px;background:linear-gradient(135deg,var(--mg-green),var(--mg-dark));border-radius:50% 8px 50% 8px;display:flex;align-items:center;justify-content:center;font-size:16px;box-shadow:var(--glow-sm);}
-  .logo-text{font-size:17px;font-weight:700;letter-spacing:-0.3px;}
-  .logo-text .mongo{color:var(--mg-green);}
-  .header-mid{display:flex;align-items:center;gap:6px;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:5px 14px;font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--muted);}
-  .header-mid .collection-name{color:var(--mg-green);font-weight:500;}
-  .header-right{display:flex;align-items:center;gap:16px;}
-  .conn-badge{display:flex;align-items:center;gap:6px;font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--muted);}
-  .conn-dot{width:7px;height:7px;background:var(--mg-green);border-radius:50%;animation:pulse 2.5s infinite;box-shadow:0 0 6px var(--mg-green);}
-  @keyframes pulse{0%,100%{opacity:1;}50%{opacity:0.5;}}
-  .version-tag{background:rgba(0,237,100,0.1);border:1px solid rgba(0,237,100,0.25);color:var(--mg-green);font-size:10px;font-weight:700;font-family:'JetBrains Mono',monospace;padding:3px 8px;border-radius:5px;letter-spacing:0.5px;}
-  .ai-badge{background:rgba(150,208,255,0.1);border:1px solid rgba(150,208,255,0.25);color:#96d0ff;font-size:10px;font-weight:700;font-family:'JetBrains Mono',monospace;padding:3px 8px;border-radius:5px;}
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Syne', sans-serif;
+  min-height: 100vh;
+  overflow-x: hidden;
+  font-size: 14px;
+}
 
-  .workspace{display:grid;grid-template-columns:260px 1fr;flex:1;overflow:hidden;}
+/* Grid BG */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(0,245,128,0.025) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0,245,128,0.025) 1px, transparent 1px);
+  background-size: 40px 40px;
+  pointer-events: none;
+  z-index: 0;
+}
+/* Ambient glow blobs */
+body::after {
+  content: '';
+  position: fixed;
+  top: -200px; right: -200px;
+  width: 600px; height: 600px;
+  background: radial-gradient(circle, rgba(0,245,128,0.06) 0%, transparent 65%);
+  pointer-events: none; z-index: 0;
+}
+.blob2 {
+  position: fixed;
+  bottom: -150px; left: -150px;
+  width: 500px; height: 500px;
+  background: radial-gradient(circle, rgba(77,184,255,0.05) 0%, transparent 65%);
+  pointer-events: none; z-index: 0;
+}
 
-  .sidebar{border-right:1px solid var(--border);background:rgba(22,27,34,0.7);display:flex;flex-direction:column;overflow-y:auto;padding:20px 0 24px;}
-  .sb-section{padding:0 16px;margin-bottom:6px;}
-  .sb-label{font-size:9px;font-weight:700;letter-spacing:2px;color:var(--muted);text-transform:uppercase;margin-bottom:8px;padding:0 4px;}
-  .nav-item{display:flex;align-items:center;gap:9px;padding:9px 10px;border-radius:7px;cursor:pointer;font-size:13px;font-weight:600;color:var(--muted);transition:all 0.18s;margin-bottom:2px;}
-  .nav-item:hover{background:var(--border);color:var(--text);}
-  .nav-item.active{background:rgba(0,237,100,0.1);color:var(--mg-green);}
-  .nav-item .ni{font-size:14px;}
-  .nav-item .nav-count{margin-left:auto;background:var(--border);color:var(--muted);font-family:'JetBrains Mono',monospace;font-size:10px;padding:1px 6px;border-radius:10px;}
-  .sb-divider{border:none;border-top:1px solid var(--border);margin:14px 16px;}
-  .collection-item{display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:7px;cursor:pointer;font-size:12px;font-weight:600;color:var(--muted);transition:all 0.18s;font-family:'JetBrains Mono',monospace;margin-bottom:2px;}
-  .collection-item:hover{background:var(--border);color:var(--text);}
-  .collection-item.active-coll{background:rgba(0,237,100,0.08);color:var(--mg-green);border-left:2px solid var(--mg-green);padding-left:8px;}
-  .coll-icon{font-size:13px;}
-  .coll-count{margin-left:auto;font-size:10px;color:var(--muted);}
-  .op-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px;}
-  .op-btn{padding:8px 6px;border-radius:7px;background:var(--card);border:1px solid var(--border);color:var(--muted);font-size:11px;font-weight:700;cursor:pointer;transition:all 0.18s;font-family:'JetBrains Mono',monospace;text-align:center;letter-spacing:0.3px;}
-  .op-btn:hover{border-color:var(--mg-green);color:var(--mg-green);}
-  .op-btn.active-op{background:rgba(0,237,100,0.1);border-color:var(--mg-green);color:var(--mg-green);}
+.app { position: relative; z-index: 1; display: flex; flex-direction: column; height: 100vh; }
 
-  .upload-zone{position:relative;border:2px dashed var(--border);border-radius:10px;padding:16px 12px;text-align:center;cursor:pointer;transition:all 0.25s;background:rgba(0,0,0,0.15);}
-  .upload-zone:hover,.upload-zone.drag-over{border-color:var(--mg-green);background:rgba(0,237,100,0.03);box-shadow:var(--glow-sm);}
-  .upload-zone input[type="file"]{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%;}
-  .upload-icon-big{font-size:22px;margin-bottom:5px;display:block;transition:transform 0.25s;}
-  .upload-zone:hover .upload-icon-big{transform:translateY(-2px);}
-  .upload-main-text{font-size:11px;font-weight:700;color:var(--text);margin-bottom:2px;}
-  .upload-sub-text{font-size:10px;color:var(--muted);font-family:'JetBrains Mono',monospace;}
-  .fmt-row{display:flex;gap:4px;justify-content:center;margin-top:8px;flex-wrap:wrap;}
-  .fmt-tag{background:var(--border);color:var(--muted);border-radius:4px;padding:2px 5px;font-size:9px;font-weight:700;font-family:'JetBrains Mono',monospace;letter-spacing:0.5px;}
-  .upload-progress{display:none;margin-top:8px;}
-  .prog-bg{background:var(--border);border-radius:3px;height:3px;overflow:hidden;}
-  .prog-fill{height:100%;background:linear-gradient(90deg,var(--mg-green),var(--mg-dark));border-radius:3px;width:0%;transition:width 0.25s;}
-  .prog-label{font-size:9px;color:var(--muted);font-family:'JetBrains Mono',monospace;margin-top:3px;text-align:center;}
-  .file-loaded{display:none;background:rgba(0,237,100,0.05);border:1px solid rgba(0,237,100,0.2);border-radius:9px;padding:10px;margin-top:8px;animation:fadeUp 0.3s ease;}
-  .fl-row{display:flex;align-items:center;gap:7px;}
-  .fl-info{flex:1;min-width:0;}
-  .fl-name{font-size:11px;font-weight:700;color:var(--mg-green);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-family:'JetBrains Mono',monospace;}
-  .fl-meta{font-size:9px;color:var(--muted);font-family:'JetBrains Mono',monospace;margin-top:2px;}
-  .fl-remove{background:none;border:1px solid var(--border);color:var(--muted);border-radius:5px;padding:2px 6px;font-size:10px;cursor:pointer;transition:all 0.18s;flex-shrink:0;}
-  .fl-remove:hover{border-color:var(--red);color:var(--red);}
-  .fl-preview-btn{margin-top:6px;background:none;border:1px solid var(--border);color:var(--muted);border-radius:6px;padding:3px 8px;font-size:9px;cursor:pointer;transition:all 0.18s;font-family:'JetBrains Mono',monospace;width:100%;letter-spacing:0.5px;font-weight:700;}
-  .fl-preview-btn:hover{border-color:var(--mg-green);color:var(--mg-green);}
-  .fl-preview-data{display:none;margin-top:7px;max-height:110px;overflow-y:auto;font-family:'JetBrains Mono',monospace;font-size:9px;border-top:1px solid var(--border);padding-top:6px;}
-  .fl-preview-data table{width:100%;border-collapse:collapse;}
-  .fl-preview-data th{color:var(--mg-green);text-align:left;padding:1px 5px;border-bottom:1px solid var(--border);white-space:nowrap;font-size:9px;}
-  .fl-preview-data td{padding:1px 5px;color:var(--muted);font-size:9px;border:none;white-space:nowrap;}
+/* ── HEADER ── */
+header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 28px; height: 56px;
+  border-bottom: 1px solid var(--border);
+  background: rgba(8,12,16,0.9);
+  backdrop-filter: blur(20px);
+  position: sticky; top: 0; z-index: 200; flex-shrink: 0;
+}
+.logo { display: flex; align-items: center; gap: 10px; }
+.logo-icon {
+  width: 30px; height: 30px;
+  background: linear-gradient(135deg, var(--green), var(--green-dim));
+  border-radius: 8px 2px 8px 2px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 15px; box-shadow: var(--glow-sm);
+  flex-shrink: 0;
+}
+.logo-text { font-size: 16px; font-weight: 800; letter-spacing: -0.5px; }
+.logo-text .m { color: var(--green); }
+.header-center {
+  display: flex; align-items: center; gap: 8px;
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: 8px; padding: 5px 14px;
+  font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--text3);
+}
+.header-center .coll { color: var(--green); font-weight: 600; }
+.header-right { display: flex; align-items: center; gap: 12px; }
+.hbadge {
+  padding: 3px 9px; border-radius: 5px; font-size: 10px; font-weight: 700;
+  font-family: 'JetBrains Mono', monospace; letter-spacing: 0.5px;
+}
+.hbadge-ai { background: rgba(77,184,255,0.1); border: 1px solid rgba(77,184,255,0.25); color: var(--blue); }
+.hbadge-v { background: rgba(0,245,128,0.1); border: 1px solid rgba(0,245,128,0.25); color: var(--green); }
+.conn-pill { display: flex; align-items: center; gap: 6px; font-family: 'JetBrains Mono', monospace; font-size: 10px; color: var(--text3); }
+.conn-dot { width: 6px; height: 6px; background: var(--green); border-radius: 50%; box-shadow: 0 0 6px var(--green); animation: blink 2s infinite; }
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.4} }
 
-  .right-panel{display:flex;flex-direction:column;overflow:hidden;}
-  .query-area{padding:20px 28px 16px;border-bottom:1px solid var(--border);background:rgba(22,27,34,0.5);flex-shrink:0;}
-  .qa-top{display:flex;align-items:center;gap:12px;margin-bottom:12px;}
-  .qa-label{font-size:9px;font-weight:700;letter-spacing:2px;color:var(--muted);text-transform:uppercase;}
-  .active-coll-pill{display:flex;align-items:center;gap:5px;background:var(--card);border:1px solid var(--border);border-radius:6px;padding:3px 10px;font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--mg-green);}
-  .query-box-wrap{position:relative;}
-  .query-box{width:100%;background:var(--card);border:1px solid var(--border);border-radius:10px;padding:14px 160px 14px 18px;color:var(--text);font-family:'Outfit',sans-serif;font-size:14px;font-weight:400;outline:none;transition:all 0.25s;height:52px;line-height:24px;}
-  .query-box:focus{border-color:var(--mg-green);box-shadow:var(--glow);background:rgba(28,35,48,0.95);}
-  .query-box::placeholder{color:var(--muted);}
-  .qb-actions{position:absolute;right:8px;top:50%;transform:translateY(-50%);display:flex;gap:6px;align-items:center;}
-  .btn-generate{background:linear-gradient(135deg,var(--mg-green),var(--mg-dark));color:#0d1117;border:none;border-radius:7px;padding:8px 16px;font-family:'Outfit',sans-serif;font-size:12px;font-weight:700;cursor:pointer;transition:all 0.2s;letter-spacing:0.3px;white-space:nowrap;}
-  .btn-generate:hover{transform:scale(1.03);box-shadow:var(--glow);}
-  .btn-generate:active{transform:scale(0.97);}
-  .btn-clr{background:var(--border);color:var(--muted);border:none;border-radius:7px;padding:8px 11px;font-size:12px;cursor:pointer;transition:all 0.18s;}
-  .btn-clr:hover{background:var(--card);color:var(--text);}
-  .example-chips{display:flex;gap:7px;margin-top:11px;flex-wrap:wrap;}
-  .chip{background:var(--card);border:1px solid var(--border);border-radius:20px;padding:4px 12px;font-size:11px;color:var(--muted);cursor:pointer;transition:all 0.18s;font-weight:600;}
-  .chip:hover{border-color:var(--mg-green);color:var(--mg-green);background:rgba(0,237,100,0.05);}
-  .ds-banner{display:none;align-items:center;gap:8px;padding:7px 12px;margin-top:10px;background:rgba(0,237,100,0.05);border:1px solid rgba(0,237,100,0.2);border-radius:7px;font-family:'JetBrains Mono',monospace;font-size:11px;animation:fadeUp 0.3s ease;}
-  .ds-banner .ds-label{color:var(--muted);font-size:10px;}
-  .ds-banner .ds-val{color:var(--mg-green);font-weight:700;flex:1;}
-  .ds-banner .ds-rows{color:var(--muted);font-size:10px;}
-  @keyframes fadeUp{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:translateY(0);}}
+/* ── LAYOUT ── */
+.workspace { display: grid; grid-template-columns: 248px 1fr; flex: 1; overflow: hidden; }
 
-  .content{flex:1;overflow-y:auto;padding:22px 28px 28px;}
-  .empty-state{text-align:center;padding:70px 20px;color:var(--muted);}
-  .es-icon{font-size:52px;margin-bottom:16px;display:block;}
-  .es-title{font-size:18px;font-weight:700;color:var(--text);margin-bottom:8px;}
-  .es-sub{font-size:13px;line-height:1.7;}
-  .loading{display:none;align-items:center;gap:12px;padding:20px 0;font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--muted);}
-  .spinner{width:16px;height:16px;border:2px solid var(--border);border-top-color:var(--mg-green);border-radius:50%;animation:spin 0.65s linear infinite;}
-  @keyframes spin{to{transform:rotate(360deg);}}
-  @keyframes slideUp{from{opacity:0;transform:translateY(12px);}to{opacity:1;transform:translateY(0);}}
+/* ── SIDEBAR ── */
+.sidebar {
+  border-right: 1px solid var(--border);
+  background: rgba(14,20,25,0.6);
+  display: flex; flex-direction: column;
+  overflow-y: auto; padding: 18px 0 20px;
+}
+.sb-sec { padding: 0 14px; margin-bottom: 4px; }
+.sb-label {
+  font-size: 9px; font-weight: 700; letter-spacing: 2.5px; color: var(--text3);
+  text-transform: uppercase; margin-bottom: 7px; padding: 0 2px;
+}
+.nav-item {
+  display: flex; align-items: center; gap: 9px;
+  padding: 8px 10px; border-radius: 7px; cursor: pointer;
+  font-size: 12px; font-weight: 600; color: var(--text3);
+  transition: all 0.15s; margin-bottom: 1px;
+}
+.nav-item:hover { background: var(--border); color: var(--text2); }
+.nav-item.active { background: rgba(0,245,128,0.08); color: var(--green); }
+.nav-item .ni { font-size: 13px; }
+.nav-count { margin-left: auto; background: var(--border); color: var(--text3); font-family: 'JetBrains Mono', monospace; font-size: 10px; padding: 1px 6px; border-radius: 8px; }
+.sb-div { border: none; border-top: 1px solid var(--border); margin: 12px 14px; }
+.coll-item {
+  display: flex; align-items: center; gap: 8px;
+  padding: 7px 10px; border-radius: 7px; cursor: pointer;
+  font-size: 11px; font-weight: 600; color: var(--text3);
+  transition: all 0.15s; font-family: 'JetBrains Mono', monospace;
+  margin-bottom: 1px;
+}
+.coll-item:hover { background: var(--border); color: var(--text2); }
+.coll-item.active { background: rgba(0,245,128,0.07); color: var(--green); border-left: 2px solid var(--green); padding-left: 8px; }
+.coll-cnt { margin-left: auto; font-size: 10px; color: var(--text3); }
+.op-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; }
+.op-btn {
+  padding: 7px 5px; border-radius: 6px;
+  background: var(--card2); border: 1px solid var(--border);
+  color: var(--text3); font-size: 10px; font-weight: 700; cursor: pointer;
+  transition: all 0.15s; font-family: 'JetBrains Mono', monospace;
+  text-align: center; letter-spacing: 0.2px;
+}
+.op-btn:hover { border-color: var(--green); color: var(--green); }
+.op-btn.active { background: rgba(0,245,128,0.08); border-color: var(--green); color: var(--green); }
 
-  .pipeline-steps{display:flex;gap:0;margin-bottom:18px;border-radius:8px;overflow:hidden;border:1px solid var(--border);}
-  .ps{flex:1;padding:10px 8px;text-align:center;font-size:10px;font-weight:700;letter-spacing:0.3px;color:var(--muted);background:var(--card);border-right:1px solid var(--border);transition:all 0.3s;}
-  .ps:last-child{border-right:none;}
-  .ps.done{color:var(--mg-green);background:rgba(0,237,100,0.06);}
-  .ps.active{color:var(--text);background:rgba(0,237,100,0.12);}
-  .ps-icon{display:block;font-size:16px;margin-bottom:2px;}
+/* Upload */
+.upload-zone {
+  position: relative; border: 2px dashed var(--border);
+  border-radius: 9px; padding: 14px 10px; text-align: center;
+  cursor: pointer; transition: all 0.2s;
+}
+.upload-zone:hover, .upload-zone.drag-over { border-color: var(--green); background: rgba(0,245,128,0.03); }
+.upload-zone input { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%; }
+.upload-icon { font-size: 20px; margin-bottom: 4px; display: block; }
+.upload-main { font-size: 11px; font-weight: 700; color: var(--text2); margin-bottom: 2px; }
+.upload-sub { font-size: 9px; color: var(--text3); font-family: 'JetBrains Mono', monospace; }
+.fmt-row { display: flex; gap: 3px; justify-content: center; margin-top: 6px; flex-wrap: wrap; }
+.fmt-tag { background: var(--border); color: var(--text3); border-radius: 3px; padding: 2px 5px; font-size: 9px; font-weight: 700; font-family: 'JetBrains Mono', monospace; }
+.file-loaded { display: none; background: rgba(0,245,128,0.04); border: 1px solid rgba(0,245,128,0.18); border-radius: 8px; padding: 9px; margin-top: 7px; }
+.fl-row { display: flex; align-items: center; gap: 6px; }
+.fl-info { flex: 1; min-width: 0; }
+.fl-name { font-size: 10px; font-weight: 700; color: var(--green); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-family: 'JetBrains Mono', monospace; }
+.fl-meta { font-size: 9px; color: var(--text3); font-family: 'JetBrains Mono', monospace; margin-top: 1px; }
+.fl-remove { background: none; border: 1px solid var(--border); color: var(--text3); border-radius: 4px; padding: 2px 5px; font-size: 9px; cursor: pointer; }
+.fl-remove:hover { border-color: var(--red); color: var(--red); }
 
-  .query-block{background:var(--card);border:1px solid var(--border);border-left:3px solid var(--mg-green);border-radius:10px;margin-bottom:20px;overflow:hidden;animation:slideUp 0.35s ease;}
-  .qb-header{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid var(--border);background:rgba(0,237,100,0.03);}
-  .qb-header-left{display:flex;align-items:center;gap:10px;}
-  .qb-method{background:rgba(0,237,100,0.15);color:var(--mg-green);font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:700;padding:3px 8px;border-radius:5px;letter-spacing:0.5px;}
-  .qb-operation{font-size:12px;color:var(--muted);font-family:'JetBrains Mono',monospace;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:400px;}
-  .qb-copy{background:none;border:1px solid var(--border);color:var(--muted);border-radius:6px;padding:3px 10px;font-size:11px;cursor:pointer;transition:all 0.18s;}
-  .qb-copy:hover{border-color:var(--mg-green);color:var(--mg-green);}
-  .qb-body{padding:14px 16px;}
-  .qb-code{font-family:'JetBrains Mono',monospace;font-size:12.5px;color:#adbac7;line-height:1.7;white-space:pre-wrap;word-break:break-word;}
+/* DB info */
+.db-info { background: var(--card2); border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px; }
+.db-label { font-size: 9px; color: var(--text3); font-weight: 700; letter-spacing: 1.5px; margin-bottom: 4px; }
+.db-name { font-size: 12px; font-weight: 700; color: var(--green); font-family: 'JetBrains Mono', monospace; }
+.db-meta { font-size: 10px; color: var(--text3); margin-top: 2px; font-family: 'JetBrains Mono', monospace; }
 
-  .stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:20px;}
-  .stat-card{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:16px 18px;transition:all 0.2s;animation:slideUp 0.4s ease;}
-  .stat-card:hover{border-color:var(--mg-green);transform:translateY(-2px);box-shadow:var(--glow-sm);}
-  .sc-label{font-size:10px;font-weight:600;color:var(--muted);letter-spacing:1px;text-transform:uppercase;margin-bottom:6px;}
-  .sc-val{font-size:24px;font-weight:900;line-height:1;margin-bottom:3px;}
-  .sc-sub{font-size:11px;color:var(--muted);font-family:'JetBrains Mono',monospace;}
-  .stat-card:nth-child(1) .sc-val{color:var(--mg-green);}
-  .stat-card:nth-child(2) .sc-val{color:#96d0ff;}
-  .stat-card:nth-child(3) .sc-val{color:var(--amber);}
-  .stat-card:nth-child(4) .sc-val{color:#dcbdfb;}
+/* ── RIGHT PANEL ── */
+.right-panel { display: flex; flex-direction: column; overflow: hidden; }
 
-  .charts-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px;}
-  .chart-card{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:18px;animation:slideUp 0.45s ease;}
-  .cc-title{font-size:12px;font-weight:700;color:var(--text);margin-bottom:3px;}
-  .cc-sub{font-size:10px;color:var(--muted);margin-bottom:14px;}
-  .cc-wrap{position:relative;height:190px;}
+/* Query Area */
+.query-area {
+  padding: 18px 24px 14px;
+  border-bottom: 1px solid var(--border);
+  background: rgba(14,20,25,0.5);
+  flex-shrink: 0;
+}
+.qa-top { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+.qa-label { font-size: 9px; font-weight: 700; letter-spacing: 2px; color: var(--text3); text-transform: uppercase; }
+.coll-pill {
+  display: flex; align-items: center; gap: 5px;
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: 6px; padding: 3px 10px;
+  font-family: 'JetBrains Mono', monospace; font-size: 10px; color: var(--green);
+}
+.qbox-wrap { position: relative; }
+.qbox {
+  width: 100%; background: var(--card); border: 1px solid var(--border);
+  border-radius: 10px; padding: 14px 170px 14px 16px;
+  color: var(--text); font-family: 'Syne', sans-serif; font-size: 14px;
+  font-weight: 500; outline: none; transition: all 0.2s; height: 50px; line-height: 22px;
+}
+.qbox:focus { border-color: var(--green); box-shadow: var(--glow); }
+.qbox::placeholder { color: var(--text3); font-weight: 400; }
+.qbox-actions { position: absolute; right: 8px; top: 50%; transform: translateY(-50%); display: flex; gap: 5px; align-items: center; }
+.btn-run {
+  background: linear-gradient(135deg, var(--green), var(--green-dim));
+  color: #080c10; border: none; border-radius: 7px; padding: 8px 14px;
+  font-family: 'Syne', sans-serif; font-size: 12px; font-weight: 700;
+  cursor: pointer; transition: all 0.18s; white-space: nowrap; letter-spacing: 0.2px;
+}
+.btn-run:hover { transform: scale(1.03); box-shadow: var(--glow); }
+.btn-run:active { transform: scale(0.97); }
+.btn-clr {
+  background: var(--border); border: none; color: var(--text3);
+  border-radius: 7px; padding: 8px 10px; font-size: 12px; cursor: pointer; transition: all 0.15s;
+}
+.btn-clr:hover { background: var(--card2); color: var(--text2); }
+.chips { display: flex; gap: 6px; margin-top: 10px; flex-wrap: wrap; }
+.chip {
+  background: var(--card2); border: 1px solid var(--border);
+  border-radius: 20px; padding: 3px 11px; font-size: 10px;
+  color: var(--text3); cursor: pointer; transition: all 0.15s; font-weight: 600;
+}
+.chip:hover { border-color: var(--green); color: var(--green); background: rgba(0,245,128,0.04); }
 
-  /* AI RESULTS */
-  .ai-result-block{background:var(--card);border:1px solid var(--border);border-left:3px solid #96d0ff;border-radius:10px;margin-bottom:20px;overflow:hidden;animation:slideUp 0.4s ease;}
-  .air-header{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid var(--border);background:rgba(150,208,255,0.03);}
-  .air-title{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:700;}
-  .air-badge{background:rgba(150,208,255,0.12);color:#96d0ff;font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:700;padding:2px 8px;border-radius:4px;}
-  .air-tabs{display:flex;gap:0;border-bottom:1px solid var(--border);}
-  .air-tab{padding:10px 18px;font-size:12px;font-weight:700;color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;transition:all 0.18s;font-family:'JetBrains Mono',monospace;}
-  .air-tab:hover{color:var(--text);}
-  .air-tab.active-tab{color:var(--mg-green);border-bottom-color:var(--mg-green);}
-  .air-loading{display:flex;align-items:center;gap:10px;color:var(--muted);font-family:'JetBrains Mono',monospace;font-size:12px;padding:20px 16px;}
-  .air-body{padding:0;}
+/* Live Explain Banner */
+.live-explain {
+  display: none;
+  margin-top: 12px;
+  background: rgba(0,245,128,0.03);
+  border: 1px solid rgba(0,245,128,0.18);
+  border-radius: 10px;
+  overflow: hidden;
+  animation: slideDown 0.25s ease;
+}
+@keyframes slideDown { from { opacity:0; transform:translateY(-6px); } to { opacity:1; transform:translateY(0); } }
+.le-top {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 14px;
+  border-bottom: 1px solid rgba(0,245,128,0.1);
+  background: rgba(0,245,128,0.04);
+}
+.le-dot { width: 7px; height: 7px; background: var(--green); border-radius: 50%; box-shadow: 0 0 6px var(--green); animation: blink 1.5s infinite; flex-shrink:0; }
+.le-heading { font-size: 10px; font-weight: 700; color: var(--green); letter-spacing: 1.5px; text-transform: uppercase; }
+.le-body { padding: 12px 14px; display: flex; gap: 14px; align-items: flex-start; }
+.le-icon { font-size: 22px; flex-shrink: 0; margin-top: 1px; }
+.le-content { flex: 1; }
+.le-sentence {
+  font-size: 13px; font-weight: 600; color: var(--text);
+  line-height: 1.65; margin-bottom: 8px;
+}
+.le-sentence em { font-style: normal; color: var(--green); font-weight: 700; }
+.le-sentence mark { background: rgba(0,245,128,0.12); color: var(--green); border-radius: 3px; padding: 0 4px; font-style: normal; font-weight: 700; }
+.le-tags { display: flex; gap: 6px; flex-wrap: wrap; }
+.le-tag {
+  display: flex; align-items: center; gap: 4px;
+  background: var(--card2); border: 1px solid var(--border);
+  border-radius: 5px; padding: 3px 8px;
+  font-size: 10px; font-weight: 600; color: var(--text3);
+  font-family: 'JetBrains Mono', monospace;
+}
+.le-tag .tt { font-size: 11px; }
+.le-tag.action { border-color: rgba(0,245,128,0.3); color: var(--green); background: rgba(0,245,128,0.06); }
+.le-tag.filter { border-color: rgba(77,184,255,0.3); color: var(--blue); background: rgba(77,184,255,0.06); }
+.le-tag.sort { border-color: rgba(255,179,64,0.3); color: var(--amber); background: rgba(255,179,64,0.06); }
+.le-tag.limit { border-color: rgba(180,142,255,0.3); color: var(--purple); background: rgba(180,142,255,0.06); }
 
-  .json-view{font-family:'JetBrains Mono',monospace;font-size:12px;color:#adbac7;line-height:1.8;max-height:340px;overflow-y:auto;background:rgba(0,0,0,0.2);border-radius:0;padding:16px;}
-  .json-key{color:#dcbdfb;} .json-str{color:#96d0ff;} .json-num{color:#6cb6ff;}
-  .json-bool{color:#f47067;} .json-null{color:var(--muted);} .json-bracket{color:var(--mg-green);}
+/* Content */
+.content { flex: 1; overflow-y: auto; padding: 20px 24px 28px; }
 
-  table{width:100%;border-collapse:collapse;}
-  thead th{background:rgba(48,54,61,0.5);padding:9px 14px;text-align:left;font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);border-bottom:1px solid var(--border);font-family:'JetBrains Mono',monospace;}
-  tbody tr{border-bottom:1px solid rgba(48,54,61,0.5);transition:background 0.12s;}
-  tbody tr:hover{background:rgba(0,237,100,0.03);}
-  tbody tr:last-child{border-bottom:none;}
-  td{padding:10px 14px;font-size:12px;color:var(--text);font-family:'JetBrains Mono',monospace;}
-  .badge{display:inline-block;padding:2px 7px;border-radius:4px;font-size:10px;font-weight:700;font-family:'JetBrains Mono',monospace;}
-  .badge-green{background:rgba(0,237,100,0.12);color:var(--mg-green);}
-  .badge-blue{background:rgba(59,130,246,0.12);color:var(--blue);}
-  .badge-red{background:rgba(239,68,68,0.12);color:var(--red);}
-  .badge-amber{background:rgba(245,158,11,0.12);color:var(--amber);}
-  .badge-purple{background:rgba(220,189,251,0.12);color:#dcbdfb;}
+/* Empty State */
+.empty-state { text-align: center; padding: 60px 20px; color: var(--text3); }
+.es-icon { font-size: 48px; display: block; margin-bottom: 14px; }
+.es-title { font-size: 20px; font-weight: 800; color: var(--text2); margin-bottom: 8px; }
+.es-sub { font-size: 13px; line-height: 1.7; color: var(--text3); }
 
-  .pagination{display:flex;align-items:center;justify-content:space-between;padding:10px 16px;border-top:1px solid var(--border);font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--muted);}
-  .page-btns{display:flex;gap:4px;}
-  .page-btn{background:var(--border);border:none;color:var(--muted);border-radius:5px;padding:4px 10px;font-size:11px;cursor:pointer;transition:all 0.15s;font-family:'JetBrains Mono',monospace;}
-  .page-btn:hover{background:var(--card);color:var(--text);}
-  .page-btn.active-page{background:rgba(0,237,100,0.15);color:var(--mg-green);}
+/* Loading */
+.loading { display: none; align-items: center; gap: 12px; padding: 16px 0; font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--text3); }
+.spinner { width: 14px; height: 14px; border: 2px solid var(--border2); border-top-color: var(--green); border-radius: 50%; animation: spin 0.6s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+@keyframes slideUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 
-  .logs-card{background:var(--card);border:1px solid var(--border);border-radius:10px;overflow:hidden;animation:slideUp 0.55s ease;}
-  .lc-header{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid var(--border);}
-  .lc-title{font-size:12px;font-weight:700;}
-  .lc-live{display:flex;align-items:center;gap:5px;font-size:10px;color:var(--mg-green);font-family:'JetBrains Mono',monospace;}
-  .log-body{padding:10px 16px;max-height:140px;overflow-y:auto;font-family:'JetBrains Mono',monospace;font-size:11px;line-height:2;}
-  .log-line{display:flex;gap:12px;animation:fadeIn 0.25s ease;}
-  @keyframes fadeIn{from{opacity:0}to{opacity:1}}
-  .lg-time{color:var(--muted);} .lg-info{color:#96d0ff;} .lg-success{color:var(--mg-green);}
-  .lg-warn{color:var(--amber);} .lg-error{color:var(--red);} .lg-msg{color:var(--text);}
-  .summary-body{padding:16px;}
+/* Pipeline */
+.pipeline {
+  display: flex; gap: 0; margin-bottom: 16px;
+  border-radius: 8px; overflow: hidden; border: 1px solid var(--border);
+  animation: slideUp 0.3s ease;
+}
+.ps {
+  flex: 1; padding: 10px 6px; text-align: center;
+  font-size: 9px; font-weight: 700; letter-spacing: 0.3px; color: var(--text3);
+  background: var(--card2); border-right: 1px solid var(--border);
+  transition: all 0.25s; text-transform: uppercase;
+}
+.ps:last-child { border-right: none; }
+.ps .ps-icon { display: block; font-size: 14px; margin-bottom: 3px; }
+.ps.done { color: var(--green); background: rgba(0,245,128,0.05); }
+.ps.active { color: var(--text); background: rgba(0,245,128,0.1); }
 
-  ::-webkit-scrollbar{width:4px;height:4px;}
-  ::-webkit-scrollbar-track{background:transparent;}
-  ::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px;}
+/* Query Display Block */
+.query-block {
+  background: var(--card); border: 1px solid var(--border);
+  border-left: 3px solid var(--green);
+  border-radius: 10px; margin-bottom: 16px; overflow: hidden;
+  animation: slideUp 0.35s ease;
+}
+.qb-head {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 10px 14px; border-bottom: 1px solid var(--border);
+  background: rgba(0,245,128,0.02);
+}
+.qb-head-left { display: flex; align-items: center; gap: 9px; }
+.qb-method {
+  background: rgba(0,245,128,0.12); color: var(--green);
+  font-family: 'JetBrains Mono', monospace; font-size: 10px; font-weight: 700;
+  padding: 2px 8px; border-radius: 4px; letter-spacing: 0.5px;
+}
+.qb-op { font-size: 11px; color: var(--text3); font-family: 'JetBrains Mono', monospace; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 380px; }
+.qb-actions2 { display: flex; gap: 6px; }
+.qb-copy {
+  background: none; border: 1px solid var(--border); color: var(--text3);
+  border-radius: 5px; padding: 3px 9px; font-size: 10px; cursor: pointer; transition: all 0.15s;
+  font-family: 'JetBrains Mono', monospace;
+}
+.qb-copy:hover { border-color: var(--green); color: var(--green); }
+.qb-body { padding: 12px 14px; }
+.qb-code { font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #9db8cc; line-height: 1.7; white-space: pre-wrap; word-break: break-word; }
+
+/* Confidence + Plan bar */
+.meta-row {
+  display: flex; gap: 10px; margin-bottom: 16px; animation: slideUp 0.38s ease;
+}
+.meta-box {
+  flex: 1; background: var(--card); border: 1px solid var(--border);
+  border-radius: 9px; padding: 12px 14px;
+}
+.meta-label { font-size: 9px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; color: var(--text3); margin-bottom: 6px; }
+.meta-val { font-size: 20px; font-weight: 800; line-height: 1; }
+.meta-sub { font-size: 10px; color: var(--text3); font-family: 'JetBrains Mono', monospace; margin-top: 2px; }
+.conf-bar-wrap { margin-top: 8px; }
+.conf-bar-bg { background: var(--border); border-radius: 3px; height: 4px; overflow: hidden; }
+.conf-bar-fill { height: 100%; border-radius: 3px; background: linear-gradient(90deg, var(--green-dim), var(--green)); transition: width 0.6s ease; }
+
+/* Explanation Box */
+.explain-box {
+  background: rgba(77,184,255,0.04); border: 1px solid rgba(77,184,255,0.15);
+  border-left: 3px solid var(--blue); border-radius: 9px;
+  padding: 14px 16px; margin-bottom: 16px; animation: slideUp 0.38s ease;
+}
+.explain-head { display: flex; align-items: center; gap: 7px; margin-bottom: 8px; }
+.explain-label { font-size: 9px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; color: var(--blue); }
+.explain-text { font-size: 12px; line-height: 1.75; color: var(--text2); }
+.explain-text strong { color: var(--green); }
+.explain-text code { background: rgba(0,245,128,0.08); color: var(--green); padding: 1px 5px; border-radius: 3px; font-family: 'JetBrains Mono', monospace; font-size: 10px; }
+
+/* Stats Row */
+.stats-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 16px; }
+.stat-card {
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: 9px; padding: 14px 16px; transition: all 0.2s; animation: slideUp 0.4s ease;
+}
+.stat-card:hover { border-color: var(--border2); transform: translateY(-2px); }
+.sc-label { font-size: 9px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; color: var(--text3); margin-bottom: 5px; }
+.sc-val { font-size: 22px; font-weight: 800; line-height: 1; margin-bottom: 2px; }
+.sc-sub { font-size: 10px; color: var(--text3); font-family: 'JetBrains Mono', monospace; }
+.stat-card:nth-child(1) .sc-val { color: var(--green); }
+.stat-card:nth-child(2) .sc-val { color: var(--blue); }
+.stat-card:nth-child(3) .sc-val { color: var(--amber); }
+.stat-card:nth-child(4) .sc-val { color: var(--purple); }
+
+/* Charts */
+.charts-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 16px; }
+.chart-card { background: var(--card); border: 1px solid var(--border); border-radius: 9px; padding: 16px; animation: slideUp 0.42s ease; }
+.cc-head { margin-bottom: 12px; }
+.cc-title { font-size: 12px; font-weight: 700; color: var(--text2); margin-bottom: 2px; }
+.cc-sub { font-size: 10px; color: var(--text3); font-family: 'JetBrains Mono', monospace; }
+.cc-wrap { position: relative; height: 180px; }
+
+/* Results Block */
+.result-block {
+  background: var(--card); border: 1px solid var(--border);
+  border-left: 3px solid var(--blue); border-radius: 9px;
+  margin-bottom: 16px; overflow: hidden; animation: slideUp 0.44s ease;
+}
+.rb-head {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 10px 14px; border-bottom: 1px solid var(--border);
+  background: rgba(77,184,255,0.02);
+}
+.rb-title { display: flex; align-items: center; gap: 7px; font-size: 13px; font-weight: 700; }
+.rb-badge { background: rgba(77,184,255,0.12); color: var(--blue); font-family: 'JetBrains Mono', monospace; font-size: 9px; font-weight: 700; padding: 2px 7px; border-radius: 4px; }
+.rb-export {
+  background: none; border: 1px solid var(--border); color: var(--text3);
+  border-radius: 5px; padding: 3px 9px; font-size: 10px; cursor: pointer;
+  font-family: 'JetBrains Mono', monospace; transition: all 0.15s;
+}
+.rb-export:hover { border-color: var(--green); color: var(--green); }
+.tabs { display: flex; border-bottom: 1px solid var(--border); }
+.tab {
+  padding: 9px 16px; font-size: 11px; font-weight: 700; color: var(--text3);
+  cursor: pointer; border-bottom: 2px solid transparent; transition: all 0.15s;
+  font-family: 'JetBrains Mono', monospace;
+}
+.tab:hover { color: var(--text2); }
+.tab.active { color: var(--green); border-bottom-color: var(--green); }
+
+/* Table */
+.table-wrap { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; }
+thead th {
+  background: rgba(30,42,54,0.5); padding: 8px 12px; text-align: left;
+  font-size: 9px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase;
+  color: var(--text3); border-bottom: 1px solid var(--border);
+  font-family: 'JetBrains Mono', monospace; white-space: nowrap;
+}
+tbody tr { border-bottom: 1px solid rgba(30,42,54,0.5); transition: background 0.1s; }
+tbody tr:hover { background: rgba(0,245,128,0.02); }
+tbody tr:last-child { border-bottom: none; }
+td { padding: 9px 12px; font-size: 11px; color: var(--text); font-family: 'JetBrains Mono', monospace; white-space: nowrap; }
+.badge { display: inline-block; padding: 2px 6px; border-radius: 4px; font-size: 9px; font-weight: 700; font-family: 'JetBrains Mono', monospace; }
+.bg-green { background: rgba(0,245,128,0.1); color: var(--green); }
+.bg-red { background: rgba(255,79,79,0.1); color: var(--red); }
+.bg-amber { background: rgba(255,179,64,0.1); color: var(--amber); }
+.bg-blue { background: rgba(77,184,255,0.1); color: var(--blue); }
+
+/* Pagination */
+.pagination {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 8px 14px; border-top: 1px solid var(--border);
+  font-family: 'JetBrains Mono', monospace; font-size: 10px; color: var(--text3);
+}
+.page-btns { display: flex; gap: 4px; }
+.page-btn {
+  background: var(--border); border: none; color: var(--text3);
+  border-radius: 4px; padding: 3px 8px; font-size: 10px; cursor: pointer;
+  transition: all 0.12s; font-family: 'JetBrains Mono', monospace;
+}
+.page-btn:hover { background: var(--card2); color: var(--text2); }
+.page-btn.active { background: rgba(0,245,128,0.12); color: var(--green); }
+
+/* JSON View */
+.json-view {
+  font-family: 'JetBrains Mono', monospace; font-size: 11px;
+  color: #8fa3b5; line-height: 1.8; max-height: 320px; overflow-y: auto;
+  background: rgba(0,0,0,0.15); padding: 14px;
+}
+.jk { color: #b48eff; } .jstr { color: var(--blue); } .jnum { color: var(--amber); }
+.jbool { color: var(--red); } .jnull { color: var(--text3); } .jbr { color: var(--green); }
+
+/* Summary */
+.summary-body { padding: 16px; }
+
+/* Logs */
+.logs-card {
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: 9px; overflow: hidden; animation: slideUp 0.5s ease;
+}
+.lc-head {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 10px 14px; border-bottom: 1px solid var(--border);
+}
+.lc-title { font-size: 11px; font-weight: 700; }
+.lc-live { display: flex; align-items: center; gap: 5px; font-size: 9px; color: var(--green); font-family: 'JetBrains Mono', monospace; letter-spacing: 1px; }
+.log-body { padding: 8px 14px; max-height: 130px; overflow-y: auto; font-family: 'JetBrains Mono', monospace; font-size: 10px; line-height: 1.9; }
+.log-line { display: flex; gap: 10px; animation: fadeIn 0.2s ease; }
+.lt { color: var(--text3); } .li { color: var(--blue); } .ls { color: var(--green); }
+.lw { color: var(--amber); } .le { color: var(--red); } .lm { color: var(--text2); }
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 4px; height: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
 </style>
 </head>
 <body>
+<div class="blob2"></div>
 <div class="app">
-
   <header>
     <div class="logo">
-      <div class="logo-leaf">🍃</div>
-      <div class="logo-text"><span class="mongo">Mongo</span>Query</div>
+      <div class="logo-icon">🍃</div>
+      <div class="logo-text"><span class="m">Mongo</span>Query</div>
     </div>
-    <div class="header-mid">
-      <span style="color:var(--muted);">db.</span><span class="collection-name" id="headerColl">employees</span><span style="color:var(--muted);">.find(...)</span>
+    <div class="header-center">
+      <span style="color:var(--text3)">db.</span><span class="coll" id="hdrColl">employees</span><span style="color:var(--text3)">.find(...)</span>
     </div>
     <div class="header-right">
-      <div class="ai-badge">✦ Claude AI Execution</div>
-      <span class="version-tag">v7.0</span>
-      <div class="conn-badge"><div class="conn-dot"></div>CONNECTED</div>
+      <div class="hbadge hbadge-ai">✦ AI Engine</div>
+      <div class="hbadge hbadge-v">v8.0</div>
+      <div class="conn-pill"><div class="conn-dot"></div>CONNECTED</div>
     </div>
   </header>
 
   <div class="workspace">
     <!-- SIDEBAR -->
     <aside class="sidebar">
-      <div class="sb-section">
+      <div class="sb-sec">
         <div class="sb-label">Navigation</div>
         <div class="nav-item active" onclick="setNav(this)"><span class="ni">⚡</span>Query Generator<span class="nav-count">5</span></div>
         <div class="nav-item" onclick="setNav(this)"><span class="ni">📊</span>Aggregations</div>
@@ -229,19 +509,19 @@
         <div class="nav-item" onclick="setNav(this)"><span class="ni">📋</span>Query History</div>
         <div class="nav-item" onclick="setNav(this)"><span class="ni">⚙️</span>Settings</div>
       </div>
-      <hr class="sb-divider">
-      <div class="sb-section">
+      <hr class="sb-div">
+      <div class="sb-sec">
         <div class="sb-label">Collections</div>
-        <div class="collection-item active-coll" onclick="selectColl(this,'employees')"><span class="coll-icon">📁</span>employees<span class="coll-count">1,240</span></div>
-        <div class="collection-item" onclick="selectColl(this,'departments')"><span class="coll-icon">📁</span>departments<span class="coll-count">12</span></div>
-        <div class="collection-item" onclick="selectColl(this,'projects')"><span class="coll-icon">📁</span>projects<span class="coll-count">348</span></div>
-        <div class="collection-item" onclick="selectColl(this,'salaries')"><span class="coll-icon">📁</span>salaries<span class="coll-count">4,820</span></div>
+        <div class="coll-item active" onclick="selectColl(this,'employees')"><span>📁</span>employees<span class="coll-cnt">1,240</span></div>
+        <div class="coll-item" onclick="selectColl(this,'departments')"><span>📁</span>departments<span class="coll-cnt">12</span></div>
+        <div class="coll-item" onclick="selectColl(this,'projects')"><span>📁</span>projects<span class="coll-cnt">348</span></div>
+        <div class="coll-item" onclick="selectColl(this,'salaries')"><span>📁</span>salaries<span class="coll-cnt">4,820</span></div>
       </div>
-      <hr class="sb-divider">
-      <div class="sb-section">
+      <hr class="sb-div">
+      <div class="sb-sec">
         <div class="sb-label">Operation Type</div>
         <div class="op-grid">
-          <div class="op-btn active-op" onclick="selectOp(this)">find()</div>
+          <div class="op-btn active" onclick="selectOp(this)">find()</div>
           <div class="op-btn" onclick="selectOp(this)">aggregate()</div>
           <div class="op-btn" onclick="selectOp(this)">insertOne()</div>
           <div class="op-btn" onclick="selectOp(this)">updateMany()</div>
@@ -249,40 +529,34 @@
           <div class="op-btn" onclick="selectOp(this)">countDocs()</div>
         </div>
       </div>
-      <hr class="sb-divider">
-      <div class="sb-section">
+      <hr class="sb-div">
+      <div class="sb-sec">
         <div class="sb-label">Upload Data File</div>
         <div class="upload-zone" id="uploadZone" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)" ondrop="handleDrop(event)">
           <input type="file" id="fileInput" accept=".csv,.xlsx,.xls,.json,.tsv" onchange="handleFileSelect(event)">
-          <span class="upload-icon-big">📂</span>
-          <div class="upload-main-text">Drop file or click to browse</div>
-          <div class="upload-sub-text">Query runs on your real data</div>
+          <span class="upload-icon">📂</span>
+          <div class="upload-main">Drop file or click</div>
+          <div class="upload-sub">Runs on your real data</div>
           <div class="fmt-row"><span class="fmt-tag">CSV</span><span class="fmt-tag">JSON</span><span class="fmt-tag">XLSX</span><span class="fmt-tag">TSV</span></div>
-        </div>
-        <div class="upload-progress" id="uploadProgress">
-          <div class="prog-bg"><div class="prog-fill" id="progFill"></div></div>
-          <div class="prog-label" id="progLabel">Parsing...</div>
         </div>
         <div class="file-loaded" id="fileLoaded">
           <div class="fl-row">
-            <span style="font-size:18px;">📄</span>
+            <span style="font-size:16px">📄</span>
             <div class="fl-info">
               <div class="fl-name" id="flName">—</div>
               <div class="fl-meta" id="flMeta">—</div>
             </div>
             <button class="fl-remove" onclick="removeFile()">✕</button>
           </div>
-          <button class="fl-preview-btn" id="flPreviewBtn" onclick="togglePreview()">▾ PREVIEW</button>
-          <div class="fl-preview-data" id="flPreviewData"></div>
         </div>
       </div>
-      <hr class="sb-divider">
-      <div class="sb-section">
+      <hr class="sb-div">
+      <div class="sb-sec">
         <div class="sb-label">Database</div>
-        <div style="background:var(--card);border:1px solid var(--border);border-radius:8px;padding:10px 12px;">
-          <div style="font-size:9px;color:var(--muted);font-weight:700;letter-spacing:1.5px;margin-bottom:5px;">ACTIVE DATABASE</div>
-          <div style="font-size:13px;font-weight:700;color:var(--mg-green);font-family:'JetBrains Mono',monospace;" id="dbName">myDatabase</div>
-          <div style="font-size:10px;color:var(--muted);margin-top:3px;font-family:'JetBrains Mono',monospace;" id="dbMeta">4 collections · 6,420 docs</div>
+        <div class="db-info">
+          <div class="db-label">ACTIVE DATABASE</div>
+          <div class="db-name" id="dbName">myDatabase</div>
+          <div class="db-meta" id="dbMeta">4 collections · 6,420 docs</div>
         </div>
       </div>
     </aside>
@@ -292,27 +566,36 @@
       <div class="query-area">
         <div class="qa-top">
           <span class="qa-label">Natural Language → MongoDB + Real Results</span>
-          <div class="active-coll-pill">🍃 db.<span id="activeColl">employees</span></div>
+          <div class="coll-pill">🍃 db.<span id="activeColl">employees</span></div>
         </div>
-        <div class="query-box-wrap">
-          <input type="text" class="query-box" id="queryInput" placeholder="e.g. Find all employees in Sales with salary over 80000"/>
-          <div class="qb-actions">
+        <div class="qbox-wrap">
+          <input type="text" class="qbox" id="queryInput" placeholder="e.g. Find all employees in Sales with salary over 80000"/>
+          <div class="qbox-actions">
             <button class="btn-clr" onclick="clearQuery()">Clear</button>
-            <button class="btn-generate" onclick="runQuery()">⚡ Generate + Run</button>
+            <button class="btn-run" onclick="runQuery()">⚡ Generate + Run</button>
           </div>
         </div>
-        <div class="ds-banner" id="dsBanner">
-          <span style="font-size:14px;">📂</span>
-          <span class="ds-label">SOURCE:</span>
-          <span class="ds-val" id="dsFileName">—</span>
-          <span class="ds-rows" id="dsRows">—</span>
-        </div>
-        <div class="example-chips">
+        <div class="chips" id="exampleChips">
           <span class="chip" onclick="useChip(this)">Find all employees in Sales</span>
           <span class="chip" onclick="useChip(this)">Top 5 highest paid</span>
           <span class="chip" onclick="useChip(this)">Count by department</span>
           <span class="chip" onclick="useChip(this)">Hired after 2020</span>
           <span class="chip" onclick="useChip(this)">Average salary per dept</span>
+        </div>
+
+        <!-- Live plain-English explanation below input -->
+        <div class="live-explain" id="liveExplain">
+          <div class="le-top">
+            <div class="le-dot"></div>
+            <span class="le-heading">What this query will do</span>
+          </div>
+          <div class="le-body">
+            <div class="le-icon" id="leIcon">🔍</div>
+            <div class="le-content">
+              <div class="le-sentence" id="leSentence">—</div>
+              <div class="le-tags" id="leTags"></div>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -320,113 +603,149 @@
         <div class="empty-state" id="emptyState">
           <span class="es-icon">🍃</span>
           <div class="es-title">MongoDB Query Generator</div>
-          <div class="es-sub">Type a question in plain English above.<br>Claude AI will generate the MongoDB query <strong>and return real result data</strong> instantly.</div>
+          <div class="es-sub">Type a question in plain English above.<br>The AI engine will generate the query and <strong>return real result data</strong>.</div>
         </div>
         <div class="loading" id="loadingState">
           <div class="spinner"></div>
-          <span id="loadingMsg">Parsing natural language...</span>
+          <span id="loadingMsg">Processing...</span>
         </div>
 
         <div id="results" style="display:none;">
-          <div class="pipeline-steps">
+
+          <!-- Pipeline -->
+          <div class="pipeline">
             <div class="ps" id="ps1"><span class="ps-icon">○</span>Tokenize</div>
             <div class="ps" id="ps2"><span class="ps-icon">○</span>Intent</div>
             <div class="ps" id="ps3"><span class="ps-icon">○</span>Schema Map</div>
             <div class="ps" id="ps4"><span class="ps-icon">○</span>Query Gen</div>
-            <div class="ps" id="ps5"><span class="ps-icon">○</span>Execute</div>
-            <div class="ps" id="ps6"><span class="ps-icon">○</span>Results</div>
+            <div class="ps" id="ps5"><span class="ps-icon">○</span>Optimize</div>
+            <div class="ps" id="ps6"><span class="ps-icon">○</span>Execute</div>
           </div>
 
+          <!-- Generated Query -->
           <div class="query-block">
-            <div class="qb-header">
-              <div class="qb-header-left">
+            <div class="qb-head">
+              <div class="qb-head-left">
                 <span class="qb-method" id="qbMethod">find()</span>
-                <span class="qb-operation" id="qbOperation">db.employees.find(...)</span>
+                <span class="qb-op" id="qbOp">db.employees.find(...)</span>
               </div>
-              <button class="qb-copy" onclick="copyQuery()">📋 Copy</button>
+              <div class="qb-actions2">
+                <button class="qb-copy" onclick="copyQuery()">📋 Copy</button>
+              </div>
             </div>
             <div class="qb-body">
-              <pre class="qb-code" id="queryOutput"></pre>
+              <pre class="qb-code" id="queryOut"></pre>
             </div>
           </div>
 
+          <!-- Explanation (directly below query) -->
+          <div class="explain-box" id="explainBox">
+            <div class="explain-head">
+              <span style="color:var(--blue);font-size:15px">💡</span>
+              <span class="explain-label">Query Explanation</span>
+            </div>
+            <div class="explain-text" id="explainText">—</div>
+          </div>
+
+          <!-- Confidence + Meta -->
+          <div class="meta-row">
+            <div class="meta-box">
+              <div class="meta-label">Confidence</div>
+              <div class="meta-val" id="metaConf" style="color:var(--green)">—</div>
+              <div class="meta-sub">query confidence</div>
+              <div class="conf-bar-wrap">
+                <div class="conf-bar-bg"><div class="conf-bar-fill" id="confBar" style="width:0%"></div></div>
+              </div>
+            </div>
+            <div class="meta-box">
+              <div class="meta-label">Query Plan</div>
+              <div class="meta-val" id="metaPlan" style="color:var(--blue);font-size:14px;padding-top:4px">—</div>
+              <div class="meta-sub" id="metaPlanSub">—</div>
+            </div>
+            <div class="meta-box">
+              <div class="meta-label">Collection</div>
+              <div class="meta-val" id="metaColl" style="color:var(--purple);font-size:14px;padding-top:4px">—</div>
+              <div class="meta-sub" id="metaCollSub">—</div>
+            </div>
+          </div>
+
+          <!-- Stats -->
           <div class="stats-row">
             <div class="stat-card"><div class="sc-label">Documents</div><div class="sc-val" id="statDocs">—</div><div class="sc-sub">matched</div></div>
             <div class="stat-card"><div class="sc-label">Fields</div><div class="sc-val" id="statFields">—</div><div class="sc-sub">per document</div></div>
             <div class="stat-card"><div class="sc-label">Exec Time</div><div class="sc-val" id="statTime">—</div><div class="sc-sub">milliseconds</div></div>
-            <div class="stat-card"><div class="sc-label">Index</div><div class="sc-val" id="statIndex">—</div><div class="sc-sub">scan type</div></div>
+            <div class="stat-card"><div class="sc-label">Index</div><div class="sc-val" id="statIdx">—</div><div class="sc-sub">scan type</div></div>
           </div>
 
+          <!-- Charts -->
           <div class="charts-grid">
             <div class="chart-card">
-              <div class="cc-title">Query Method Distribution</div>
-              <div class="cc-sub">Usage across query types this session</div>
+              <div class="cc-head">
+                <div class="cc-title">Query Method Distribution</div>
+                <div class="cc-sub">Usage this session</div>
+              </div>
               <div class="cc-wrap"><canvas id="methodChart"></canvas></div>
             </div>
             <div class="chart-card">
-              <div class="cc-title">Execution Time History</div>
-              <div class="cc-sub">Last 10 queries (ms)</div>
+              <div class="cc-head">
+                <div class="cc-title">Execution Time History</div>
+                <div class="cc-sub">Last 10 queries (ms)</div>
+              </div>
               <div class="cc-wrap"><canvas id="timeChart"></canvas></div>
             </div>
           </div>
 
-          <!-- RESULT BLOCK -->
-          <div class="ai-result-block">
-            <div class="air-header">
-              <div class="air-title">
+          <!-- Result Block -->
+          <div class="result-block">
+            <div class="rb-head">
+              <div class="rb-title">
                 <span>✦</span>
                 <span>Query Results</span>
-                <span class="air-badge" id="resultBadge">AI Executed</span>
+                <span class="rb-badge" id="resultBadge">AI Executed</span>
               </div>
-              <button style="background:none;border:1px solid var(--border);color:var(--muted);border-radius:6px;padding:3px 10px;font-size:11px;cursor:pointer;transition:all 0.18s;font-family:'JetBrains Mono',monospace;" onmouseover="this.style.borderColor='var(--mg-green)';this.style.color='var(--mg-green)'" onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--muted)'" onclick="exportResults()">⬇ Export JSON</button>
+              <button class="rb-export" onclick="exportResults()">⬇ Export JSON</button>
             </div>
-            <div class="air-tabs">
-              <div class="air-tab active-tab" onclick="switchTab('table',this)">📋 Table</div>
-              <div class="air-tab" onclick="switchTab('json',this)">{ } JSON</div>
-              <div class="air-tab" onclick="switchTab('summary',this)">💡 Summary</div>
+            <div class="tabs">
+              <div class="tab active" onclick="switchTab('table',this)">📋 Table</div>
+              <div class="tab" onclick="switchTab('json',this)">{ } JSON</div>
+              <div class="tab" onclick="switchTab('summary',this)">💡 Summary</div>
             </div>
-            <div id="airLoading" class="air-loading" style="display:none;">
-              <div class="spinner"></div>
-              <span id="airLoadingMsg">Claude AI is executing your query...</span>
-            </div>
-            <div id="tabTable" class="air-body">
-              <div style="overflow-x:auto;"><table><thead id="tableHead"></thead><tbody id="tableBody"></tbody></table></div>
+            <div id="tabTable">
+              <div class="table-wrap"><table><thead id="tHead"></thead><tbody id="tBody"></tbody></table></div>
               <div class="pagination">
                 <span id="pageInfo">0 documents</span>
                 <div class="page-btns" id="pageBtns"></div>
               </div>
             </div>
-            <div id="tabJson" class="air-body" style="display:none;">
-              <div class="json-view" id="jsonView"></div>
-            </div>
-            <div id="tabSummary" class="air-body" style="display:none;">
-              <div class="summary-body" id="summaryView"></div>
-            </div>
+            <div id="tabJson" style="display:none"><div class="json-view" id="jsonView"></div></div>
+            <div id="tabSummary" style="display:none"><div class="summary-body" id="summaryView"></div></div>
           </div>
 
+          <!-- Log -->
           <div class="logs-card">
-            <div class="lc-header">
-              <span class="lc-title">Query Execution Log</span>
-              <span class="lc-live"><span class="conn-dot" style="width:6px;height:6px;box-shadow:none;"></span>LIVE</span>
+            <div class="lc-head">
+              <span class="lc-title">Execution Log</span>
+              <span class="lc-live"><span class="conn-dot" style="width:5px;height:5px;box-shadow:none"></span>LIVE</span>
             </div>
             <div class="log-body" id="logBody"></div>
           </div>
-        </div>
-      </div>
-    </div>
-  </div>
-</div>
+
+        </div><!-- /results -->
+      </div><!-- /content -->
+    </div><!-- /right-panel -->
+  </div><!-- /workspace -->
+</div><!-- /app -->
 
 <script>
 // ── STATE ──
-let modelChart=null,timeChart=null;
+let methodChart=null, timeChart=null;
 const timeHistory=[22,14,31,18,40,12,27,19,35,16];
 const methodCounts={find:6,aggregate:3,insert:1,update:1};
-let uploadedFile=null,previewOpen=false,activeColl='employees';
+let uploadedFile=null, activeColl='employees';
 let currentResultDocs=[];
 const PAGE_SIZE=10;
 
-// ── BUILT-IN DATASET ──
+// ── DEFAULT DATASET ──
 const DEFAULT_DATA=[
   {employee_id:"E001",name:"Alice Johnson",department:"Sales",salary:82000,hire_date:"2019-03-12",status:"active",age:34},
   {employee_id:"E002",name:"Ben Torres",department:"Engineering",salary:115000,hire_date:"2018-07-22",status:"active",age:29},
@@ -465,74 +784,67 @@ const DEFAULT_DATA=[
   {employee_id:"E091",name:"Noah Adams",department:"Engineering",salary:98000,hire_date:"2023-08-14",status:"active",age:23},
 ];
 
-// ── UI HELPERS ──
-function useChip(el){document.getElementById('queryInput').value=el.textContent;}
-function setNav(el){document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));el.classList.add('active');}
+// ── UTILS ──
+const sleep = ms => new Promise(r=>setTimeout(r,ms));
+function useChip(el){ document.getElementById('queryInput').value=el.textContent; updateLiveExplain(); }
+function setNav(el){ document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active')); el.classList.add('active'); }
 function selectColl(el,name){
-  document.querySelectorAll('.collection-item').forEach(c=>c.classList.remove('active-coll'));
-  el.classList.add('active-coll');
-  activeColl=name;
+  document.querySelectorAll('.coll-item').forEach(c=>c.classList.remove('active'));
+  el.classList.add('active'); activeColl=name;
   document.getElementById('activeColl').textContent=name;
-  document.getElementById('headerColl').textContent=name;
+  document.getElementById('hdrColl').textContent=name;
 }
-function selectOp(el){document.querySelectorAll('.op-btn').forEach(b=>b.classList.remove('active-op'));el.classList.add('active-op');}
+function selectOp(el){ document.querySelectorAll('.op-btn').forEach(b=>b.classList.remove('active')); el.classList.add('active'); }
 function clearQuery(){
   document.getElementById('queryInput').value='';
+  document.getElementById('liveExplain').style.display='none';
   document.getElementById('emptyState').style.display='block';
   document.getElementById('results').style.display='none';
   document.getElementById('loadingState').style.display='none';
 }
 function copyQuery(){
-  navigator.clipboard.writeText(document.getElementById('queryOutput').innerText).catch(()=>{});
-  const b=document.querySelector('.qb-copy');b.textContent='✓ Copied';setTimeout(()=>b.textContent='📋 Copy',1500);
+  navigator.clipboard.writeText(document.getElementById('queryOut').innerText).catch(()=>{});
+  const b=document.querySelector('.qb-copy'); b.textContent='✓ Copied'; setTimeout(()=>b.textContent='📋 Copy',1500);
 }
 function switchTab(tab,el){
-  document.querySelectorAll('.air-tab').forEach(t=>t.classList.remove('active-tab'));el.classList.add('active-tab');
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active')); el.classList.add('active');
   document.getElementById('tabTable').style.display=tab==='table'?'block':'none';
   document.getElementById('tabJson').style.display=tab==='json'?'block':'none';
   document.getElementById('tabSummary').style.display=tab==='summary'?'block':'none';
 }
 function exportResults(){
   const blob=new Blob([JSON.stringify(currentResultDocs,null,2)],{type:'application/json'});
-  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='query_results.json';a.click();
+  const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='query_results.json'; a.click();
 }
 function addLog(type,msg){
   const lb=document.getElementById('logBody');
-  const div=document.createElement('div');
-  div.className='log-line';
-  div.innerHTML=`<span class="lg-time">${new Date().toTimeString().slice(0,8)}</span><span class="lg-${type}">[${type.toUpperCase()}]</span><span class="lg-msg">${msg}</span>`;
-  lb.appendChild(div);lb.scrollTop=lb.scrollHeight;
+  const d=document.createElement('div'); d.className='log-line';
+  const t=new Date().toTimeString().slice(0,8);
+  d.innerHTML=`<span class="lt">${t}</span><span class="l${type}">[${type.toUpperCase()}]</span><span class="lm">${msg}</span>`;
+  lb.appendChild(d); lb.scrollTop=lb.scrollHeight;
 }
-async function sleep(ms){return new Promise(r=>setTimeout(r,ms));}
 
 // ── FILE UPLOAD ──
-function handleDragOver(e){e.preventDefault();document.getElementById('uploadZone').classList.add('drag-over');}
-function handleDragLeave(){document.getElementById('uploadZone').classList.remove('drag-over');}
-function handleDrop(e){e.preventDefault();document.getElementById('uploadZone').classList.remove('drag-over');const f=e.dataTransfer.files[0];if(f)processFile(f);}
-function handleFileSelect(e){const f=e.target.files[0];if(f)processFile(f);}
+function handleDragOver(e){ e.preventDefault(); document.getElementById('uploadZone').classList.add('drag-over'); }
+function handleDragLeave(){ document.getElementById('uploadZone').classList.remove('drag-over'); }
+function handleDrop(e){ e.preventDefault(); document.getElementById('uploadZone').classList.remove('drag-over'); const f=e.dataTransfer.files[0]; if(f)processFile(f); }
+function handleFileSelect(e){ const f=e.target.files[0]; if(f)processFile(f); }
 function processFile(file){
   const ext=file.name.split('.').pop().toLowerCase();
   if(!['csv','tsv','json','xlsx','xls'].includes(ext)){alert('Unsupported format.');return;}
-  const prog=document.getElementById('uploadProgress'),fill=document.getElementById('progFill'),lbl=document.getElementById('progLabel');
-  prog.style.display='block';fill.style.width='0%';lbl.textContent='Reading...';
-  let pct=0;const iv=setInterval(()=>{pct=Math.min(pct+Math.random()*30,90);fill.style.width=pct+'%';},70);
   const reader=new FileReader();
   reader.onload=(e)=>{
-    clearInterval(iv);fill.style.width='100%';lbl.textContent='Mapping schema...';
-    setTimeout(()=>{
-      prog.style.display='none';
-      let parsed;
-      try{
-        if(ext==='json')parsed=parseJSON(e.target.result);
-        else if(ext==='csv'||ext==='tsv')parsed=parseCSV(e.target.result,ext==='tsv'?'\t':',');
-        else parsed={headers:['[XLSX]'],rows:[],rowCount:'?',docs:[]};
-      }catch(err){parsed={headers:['error'],rows:[[err.message]],rowCount:0,docs:[]};}
-      const sz=file.size>1048576?(file.size/1048576).toFixed(1)+' MB':(file.size/1024).toFixed(1)+' KB';
-      uploadedFile={name:file.name,size:sz,ext:ext.toUpperCase(),rows:parsed.rowCount,cols:parsed.headers.length,headers:parsed.headers,preview:parsed.rows.slice(0,5),docs:parsed.docs};
-      showFileLoaded();
-    },300);
+    let parsed;
+    try{
+      if(ext==='json') parsed=parseJSON(e.target.result);
+      else if(ext==='csv'||ext==='tsv') parsed=parseCSV(e.target.result,ext==='tsv'?'\t':',');
+      else parsed={headers:['[XLSX]'],rows:[],rowCount:'?',docs:[]};
+    }catch(err){parsed={headers:['error'],rows:[[err.message]],rowCount:0,docs:[]};}
+    const sz=file.size>1048576?(file.size/1048576).toFixed(1)+' MB':(file.size/1024).toFixed(1)+' KB';
+    uploadedFile={name:file.name,size:sz,ext:ext.toUpperCase(),rows:parsed.rowCount,cols:parsed.headers.length,headers:parsed.headers,docs:parsed.docs};
+    showFileLoaded();
   };
-  if(ext==='xlsx'||ext==='xls')reader.readAsArrayBuffer(file);else reader.readAsText(file);
+  if(ext==='xlsx'||ext==='xls') reader.readAsArrayBuffer(file); else reader.readAsText(file);
 }
 function parseCSV(text,delim=','){
   const lines=text.trim().split('\n').filter(l=>l.trim());
@@ -555,109 +867,85 @@ function showFileLoaded(){
   document.getElementById('flName').textContent=fd.name;
   document.getElementById('flMeta').textContent=`${fd.ext} · ${fd.rows} docs · ${fd.cols} fields · ${fd.size}`;
   document.getElementById('fileLoaded').style.display='block';
-  const prev=document.getElementById('flPreviewData');
-  if(fd.preview&&fd.preview.length){
-    let html='<table><thead><tr>'+fd.headers.map(h=>`<th>${h}</th>`).join('')+'</tr></thead><tbody>';
-    fd.preview.forEach(r=>{html+='<tr>'+r.map(c=>`<td>${c}</td>`).join('')+'</tr>';});
-    prev.innerHTML=html+'</tbody></table>';
-  }
   const collName=fd.name.replace(/\.[^.]+$/,'').replace(/[^a-zA-Z0-9_]/g,'_');
   activeColl=collName;
   document.getElementById('activeColl').textContent=collName;
-  document.getElementById('headerColl').textContent=collName;
+  document.getElementById('hdrColl').textContent=collName;
   document.getElementById('dbName').textContent='uploadedDB';
   document.getElementById('dbMeta').textContent=`1 collection · ${fd.rows} docs`;
-  document.getElementById('dsBanner').style.display='flex';
-  document.getElementById('dsFileName').textContent=fd.name;
-  document.getElementById('dsRows').textContent=fd.rows+' docs';
-  if(fd.headers&&fd.headers.length){
-    const f=fd.headers[0],f2=fd.headers[1]||f;
-    const chips=[`Find all by ${f}`,`Top 5 by ${f2}`,`Count by ${f}`,`Group by ${f2}`,`Average of ${f2}`];
-    document.querySelectorAll('.chip').forEach((c,i)=>{if(chips[i])c.textContent=chips[i];});
-  }
-}
-function togglePreview(){
-  previewOpen=!previewOpen;
-  document.getElementById('flPreviewData').style.display=previewOpen?'block':'none';
-  document.getElementById('flPreviewBtn').textContent=previewOpen?'▴ HIDE':'▾ PREVIEW';
 }
 function removeFile(){
-  uploadedFile=null;previewOpen=false;
-  ['fileLoaded','flPreviewData'].forEach(id=>document.getElementById(id).style.display='none');
+  uploadedFile=null;
+  document.getElementById('fileLoaded').style.display='none';
   document.getElementById('fileInput').value='';
-  document.getElementById('dsBanner').style.display='none';
   activeColl='employees';
   document.getElementById('activeColl').textContent='employees';
-  document.getElementById('headerColl').textContent='employees';
+  document.getElementById('hdrColl').textContent='employees';
   document.getElementById('dbName').textContent='myDatabase';
   document.getElementById('dbMeta').textContent='4 collections · 6,420 docs';
-  const def=['Find all employees in Sales','Top 5 highest paid','Count by department','Hired after 2020','Average salary per dept'];
-  document.querySelectorAll('.chip').forEach((c,i)=>{if(def[i])c.textContent=def[i];});
 }
 
-// ── TABLE RENDER ──
+// ── TABLE ──
 function renderTable(docs,page=0){
-  const start=page*PAGE_SIZE,end=Math.min(start+PAGE_SIZE,docs.length);
+  const start=page*PAGE_SIZE, end=Math.min(start+PAGE_SIZE,docs.length);
   const pageDocs=docs.slice(start,end);
   if(!pageDocs.length){
-    document.getElementById('tableHead').innerHTML='';
-    document.getElementById('tableBody').innerHTML='<tr><td style="color:var(--muted);text-align:center;padding:28px;font-family:JetBrains Mono,monospace;font-size:12px;" colspan="99">No documents matched</td></tr>';
+    document.getElementById('tHead').innerHTML='';
+    document.getElementById('tBody').innerHTML='<tr><td style="color:var(--text3);text-align:center;padding:24px;font-family:JetBrains Mono,monospace;font-size:11px;" colspan="99">No documents matched</td></tr>';
     document.getElementById('pageInfo').textContent='0 documents';
     document.getElementById('pageBtns').innerHTML='';
     return;
   }
   const keys=Object.keys(pageDocs[0]);
-  document.getElementById('tableHead').innerHTML='<tr>'+keys.map(k=>`<th>${k}</th>`).join('')+'</tr>';
-  const tbody=document.getElementById('tableBody');tbody.innerHTML='';
+  document.getElementById('tHead').innerHTML='<tr>'+keys.map(k=>`<th>${k}</th>`).join('')+'</tr>';
+  const tbody=document.getElementById('tBody'); tbody.innerHTML='';
   pageDocs.forEach(doc=>{
     const tr=document.createElement('tr');
     tr.innerHTML=keys.map(k=>{
       const v=doc[k];
-      if(v===null||v===undefined)return`<td><span style="color:var(--muted)">null</span></td>`;
-      if(typeof v==='object')return`<td><span style="color:var(--muted);font-size:10px;">{...}</span></td>`;
+      if(v===null||v===undefined)return`<td><span style="color:var(--text3)">null</span></td>`;
+      if(typeof v==='object')return`<td><span style="color:var(--text3);font-size:10px">{...}</span></td>`;
       const s=String(v);
-      if(s==='active')return`<td><span class="badge badge-green">active</span></td>`;
-      if(s==='inactive')return`<td><span class="badge badge-red">inactive</span></td>`;
-      if(s==='on-leave')return`<td><span class="badge badge-amber">on-leave</span></td>`;
-      if(s==='true'||v===true)return`<td><span class="badge badge-blue">true</span></td>`;
-      if(s==='false'||v===false)return`<td><span class="badge badge-red">false</span></td>`;
+      if(s==='active')return`<td><span class="badge bg-green">active</span></td>`;
+      if(s==='inactive')return`<td><span class="badge bg-red">inactive</span></td>`;
+      if(s==='on-leave')return`<td><span class="badge bg-amber">on-leave</span></td>`;
+      if(s==='true'||v===true)return`<td><span class="badge bg-blue">true</span></td>`;
+      if(s==='false'||v===false)return`<td><span class="badge bg-red">false</span></td>`;
       return`<td>${s}</td>`;
     }).join('');
     tbody.appendChild(tr);
   });
   document.getElementById('pageInfo').textContent=`Showing ${start+1}–${end} of ${docs.length} docs`;
   const total=Math.ceil(docs.length/PAGE_SIZE);
-  document.getElementById('pageBtns').innerHTML=Array.from({length:total},(_,i)=>`<button class="page-btn${i===page?' active-page':''}" onclick="renderTable(currentResultDocs,${i})">${i+1}</button>`).join('');
+  document.getElementById('pageBtns').innerHTML=Array.from({length:total},(_,i)=>`<button class="page-btn${i===page?' active':''}" onclick="renderTable(currentResultDocs,${i})">${i+1}</button>`).join('');
 }
 
-// ── JSON RENDER ──
+// ── JSON VIEW ──
 function renderJSON(docs){
   const str=JSON.stringify(docs.slice(0,30),null,2);
   document.getElementById('jsonView').innerHTML=str
-    .replace(/("[\w$_][\w\d$_]*")\s*:/g,'<span class="json-key">$1</span>:')
-    .replace(/:\s*("(?:[^"\\]|\\.)*")/g,(m,s)=>`: <span class="json-str">${s}</span>`)
-    .replace(/:\s*(-?\d+\.?\d*)/g,(m,n)=>`: <span class="json-num">${n}</span>`)
-    .replace(/:\s*(true|false)/g,(m,b)=>`: <span class="json-bool">${b}</span>`)
-    .replace(/:\s*(null)/g,`: <span class="json-null">null</span>`)
-    .replace(/([{}\[\]])/g,'<span class="json-bracket">$1</span>');
+    .replace(/("[\w$_][\w\d$_]*")\s*:/g,'<span class="jk">$1</span>:')
+    .replace(/:\s*("(?:[^"\\]|\\.)*")/g,(m,s)=>`: <span class="jstr">${s}</span>`)
+    .replace(/:\s*(-?\d+\.?\d*)/g,(m,n)=>`: <span class="jnum">${n}</span>`)
+    .replace(/:\s*(true|false)/g,(m,b)=>`: <span class="jbool">${b}</span>`)
+    .replace(/:\s*(null)/g,`: <span class="jnull">null</span>`)
+    .replace(/([{}\[\]])/g,'<span class="jbr">$1</span>');
 }
 
-// ── LOCAL FALLBACK ──
+// ── LOCAL ENGINE ──
 function localExecute(query,data,coll){
-  const q=query.toLowerCase();let results=[...data];
+  const q=query.toLowerCase(); let results=[...data];
   const depts=['sales','engineering','finance','marketing','operations','management'];
   for(const d of depts){if(q.includes(d)){results=results.filter(r=>(r.department||'').toLowerCase()===d);break;}}
-  if(q.includes('active')&&!q.includes('inactive'))results=results.filter(r=>r.status==='active');
-  if(q.includes('inactive'))results=results.filter(r=>r.status==='inactive');
-  if(q.includes('on-leave')||q.includes('leave'))results=results.filter(r=>r.status==='on-leave');
-  const yr=q.match(/after (\d{4})/);if(yr)results=results.filter(r=>(r.hire_date||'')>yr[1]);
-  const salOver=q.match(/salary\s*(?:over|above|greater|>)\s*(\d+)/);if(salOver)results=results.filter(r=>(r.salary||0)>parseInt(salOver[1]));
-  const salUnder=q.match(/salary\s*(?:under|below|less|<)\s*(\d+)/);if(salUnder)results=results.filter(r=>(r.salary||0)<parseInt(salUnder[1]));
-  if(q.includes('highest paid')||q.includes('top salary'))results.sort((a,b)=>(b.salary||0)-(a.salary||0));
-  if(q.includes('lowest paid'))results.sort((a,b)=>(a.salary||0)-(b.salary||0));
-  if(q.includes('newest')||q.includes('recently hired'))results.sort((a,b)=>b.hire_date>a.hire_date?1:-1);
-  const topM=q.match(/top\s+(\d+)/);if(topM)results=results.slice(0,parseInt(topM[1]));
-  // aggregations
+  if(q.includes('active')&&!q.includes('inactive')) results=results.filter(r=>r.status==='active');
+  if(q.includes('inactive')) results=results.filter(r=>r.status==='inactive');
+  if(q.includes('on-leave')||q.includes('leave')) results=results.filter(r=>r.status==='on-leave');
+  const yr=q.match(/after (\d{4})/); if(yr) results=results.filter(r=>(r.hire_date||'')>yr[1]);
+  const salOver=q.match(/salary\s*(?:over|above|greater|>)\s*(\d+)/); if(salOver) results=results.filter(r=>(r.salary||0)>parseInt(salOver[1]));
+  const salUnder=q.match(/salary\s*(?:under|below|less|<)\s*(\d+)/); if(salUnder) results=results.filter(r=>(r.salary||0)<parseInt(salUnder[1]));
+  if(q.includes('highest paid')||q.includes('top salary')) results.sort((a,b)=>(b.salary||0)-(a.salary||0));
+  if(q.includes('lowest paid')) results.sort((a,b)=>(a.salary||0)-(b.salary||0));
+  const topM=q.match(/top\s+(\d+)/); if(topM) results=results.slice(0,parseInt(topM[1]));
   let method='find()';
   if(q.includes('count by')||q.includes('group by dept')){
     const g={};data.forEach(d=>{const k=d.department||'Unknown';g[k]=(g[k]||0)+1;});
@@ -670,39 +958,42 @@ function localExecute(query,data,coll){
     results=Object.entries(g).map(([_id,t])=>({_id,avg_salary:Math.round(t/ct[_id]),count:ct[_id]})).sort((a,b)=>b.avg_salary-a.avg_salary);
     method='aggregate()';
   }
-  const isAgg=method.startsWith('agg');
+  const dept=depts.find(d=>q.includes(d));
+  const mqFilter=dept?`department:"${dept.charAt(0).toUpperCase()+dept.slice(1)}"`:salOver?`salary:{$gt:${salOver[1]}}`:'{}';
+  const mongoQuery=method.startsWith('agg')
+    ?`db.${coll}.aggregate([\n  { $group: { _id: "$department", count: { $sum: 1 } } },\n  { $sort: { count: -1 } }\n])`
+    :`db.${coll}.find({ ${mqFilter} })${q.includes('highest')?'.sort({ salary: -1 })':''}`;
   return{
-    mongo_query:`db.${coll}.${isAgg?`aggregate([{ $group: { _id: "$department", ... } }, { $sort: {...} }])`:`find({${[...depts.filter(d=>q.includes(d)).map(d=>`department:"${d.charAt(0).toUpperCase()+d.slice(1)}"`)].join(', ')}}).sort({salary:-1})`}`,
-    method,
-    index:results.length<data.length?'IXSCAN':'COLLSCAN',
+    mongo_query: mongoQuery, method, index: results.length<data.length?'IXSCAN':'COLLSCAN',
+    confidence: 88,
+    query_plan: `${method.startsWith('agg')?'Group + Sort':'Filter + Fetch'} → ${results.length} docs`,
     results,
-    summary:`Found **${results.length}** document${results.length!==1?'s':''} from the \`${coll}\` collection (${data.length} total). ${results.length>0&&results[0].salary?`Salary range in results: $${Math.min(...results.filter(r=>r.salary).map(r=>r.salary)).toLocaleString()} – $${Math.max(...results.filter(r=>r.salary).map(r=>r.salary)).toLocaleString()}.`:''}`
+    explanation: `This query filters the <code>${coll}</code> collection${dept?` for <strong>${dept.charAt(0).toUpperCase()+dept.slice(1)}</strong> department employees`:''}${salOver?` with salary <strong>over $${parseInt(salOver[1]).toLocaleString()}</strong>`:''}${yr?` hired <strong>after ${yr[1]}</strong>`:''}.${results.length>0&&results[0].salary?` Results are sorted by salary descending. Salary range in results: <strong>$${Math.min(...results.filter(r=>r.salary).map(r=>r.salary)).toLocaleString()} – $${Math.max(...results.filter(r=>r.salary).map(r=>r.salary)).toLocaleString()}</strong>.`:''}`,
+    summary: `Found <strong>${results.length}</strong> document${results.length!==1?'s':''} from <code>${coll}</code> (${data.length} total).${results.length>0&&results[0].salary?` Salary range: $${Math.min(...results.filter(r=>r.salary).map(r=>r.salary)).toLocaleString()} – $${Math.max(...results.filter(r=>r.salary).map(r=>r.salary)).toLocaleString()}.`:''}`
   };
 }
 
-// ── MAIN QUERY RUNNER ──
+// ── MAIN ──
 async function runQuery(){
   const raw=document.getElementById('queryInput').value.trim();
   if(!raw)return;
   document.getElementById('emptyState').style.display='none';
   document.getElementById('results').style.display='none';
   document.getElementById('loadingState').style.display='flex';
-  // reset pipeline
   for(let i=1;i<=6;i++){const p=document.getElementById('ps'+i);p.className='ps';p.querySelector('.ps-icon').textContent='○';}
-  const steps=["Tokenizing input...","Detecting intent...","Mapping schema...","Generating MongoDB query...","Executing on dataset...","Building results..."];
+  const steps=["Tokenizing input...","Detecting intent...","Mapping schema...","Generating MongoDB query...","Optimizing execution plan...","Executing query..."];
   for(let i=0;i<steps.length;i++){
     document.getElementById('loadingMsg').textContent=steps[i];
-    const p=document.getElementById('ps'+(i+1));p.className='ps active';p.querySelector('.ps-icon').textContent='⟳';
-    await sleep(200);
-    p.className='ps done';p.querySelector('.ps-icon').textContent='✓';
+    const p=document.getElementById('ps'+(i+1)); p.className='ps active'; p.querySelector('.ps-icon').textContent='⟳';
+    await sleep(180);
+    p.className='ps done'; p.querySelector('.ps-icon').textContent='✓';
   }
   document.getElementById('loadingState').style.display='none';
   document.getElementById('results').style.display='block';
   document.getElementById('logBody').innerHTML='';
-  document.getElementById('airLoading').style.display='flex';
-  addLog('info',`Query: "${raw.slice(0,60)}"`);
-  addLog('info',`Collection: ${activeColl} · Source: ${uploadedFile?uploadedFile.name:'built-in dataset (35 docs)'}`);
-  addLog('info','Calling Claude AI for query generation + execution...');
+  addLog('i',`Query: "${raw.slice(0,60)}"`);
+    addLog('i',`Collection: ${activeColl} · ${uploadedFile?uploadedFile.name:'built-in dataset (35 docs)'}`);
+  addLog('i','Generating query + executing...');
 
   const dataset=uploadedFile?uploadedFile.docs:DEFAULT_DATA;
   const t0=Date.now();
@@ -715,19 +1006,24 @@ async function runQuery(){
       body:JSON.stringify({
         model:"claude-sonnet-4-20250514",
         max_tokens:2500,
-        system:`You are a MongoDB query execution engine. Given a natural language request and a JSON dataset, you must:
+        system:`You are a MongoDB query execution engine. Given a natural language request and JSON dataset:
 1. Write the correct MongoDB query
-2. Mentally execute it against the provided data — actually filter, sort, group, or transform the documents
-3. Return the real matching/computed result documents
-4. Write a plain-English summary
+2. Execute it mentally against the data
+3. Return real matching/computed result documents
+4. Provide a confidence score (0-100)
+5. Provide a plain English explanation with HTML tags (strong, code)
+6. Provide a brief summary
 
-Respond with ONLY valid JSON (no markdown, no backticks, no extra text):
+Respond ONLY with valid JSON (no markdown):
 {
-  "mongo_query": "the full db.collection.find({}) or aggregate([...]) query string",
+  "mongo_query": "full db.collection.find({}) or aggregate([...]) string",
   "method": "find() or aggregate()",
   "index": "IXSCAN or COLLSCAN",
-  "results": [ ... actual result documents ... ],
-  "summary": "Plain English explanation of results"
+  "confidence": 95,
+  "query_plan": "short description of execution plan",
+  "results": [...actual result documents...],
+  "explanation": "HTML explanation with <strong> and <code> tags",
+  "summary": "plain text summary"
 }`,
         messages:[{role:"user",content:`Natural language: "${raw}"\nCollection: ${activeColl}\nDataset (${dataset.length} docs):\n${JSON.stringify(dataset.slice(0,120))}`}]
       })
@@ -735,93 +1031,329 @@ Respond with ONLY valid JSON (no markdown, no backticks, no extra text):
     const d=await resp.json();
     const txt=d.content?.map(c=>c.text||'').join('')||'';
     aiResult=JSON.parse(txt.replace(/```json|```/g,'').trim());
-    document.getElementById('resultBadge').textContent='Claude AI';
-    addLog('success',`Claude AI returned ${aiResult.results?.length||0} documents`);
+    document.getElementById('resultBadge').textContent='AI Executed';
+    addLog('s',`Engine returned ${aiResult.results?.length||0} documents`);
   }catch(err){
-    addLog('warn',`AI unavailable (${err.message.slice(0,40)}) — using local engine`);
+    addLog('w',`AI unavailable (${err.message.slice(0,40)}) — local engine`);
     aiResult=localExecute(raw,dataset,activeColl);
     document.getElementById('resultBadge').textContent='Local Engine';
-    addLog('success',`Local engine: ${aiResult.results.length} documents`);
+    addLog('s',`Local engine: ${aiResult.results.length} docs`);
   }
 
   const execMs=Date.now()-t0;
-  document.getElementById('airLoading').style.display='none';
   currentResultDocs=aiResult.results||[];
   const numFields=currentResultDocs.length>0?Object.keys(currentResultDocs[0]).length:0;
+  const conf=aiResult.confidence||88;
 
   // Stats
   document.getElementById('statDocs').textContent=currentResultDocs.length;
   document.getElementById('statFields').textContent=numFields;
   document.getElementById('statTime').textContent=execMs+'ms';
-  document.getElementById('statIndex').textContent=aiResult.index||'COLLSCAN';
+  document.getElementById('statIdx').textContent=aiResult.index||'COLLSCAN';
+
+  // Meta row
+  document.getElementById('metaConf').textContent=conf+'%';
+  document.getElementById('confBar').style.width=conf+'%';
+  document.getElementById('confBar').style.background=conf>=90?'linear-gradient(90deg,#00c060,#00f580)':conf>=70?'linear-gradient(90deg,#ffb340,#ffcc70)':'linear-gradient(90deg,#ff4f4f,#ff8080)';
+  document.getElementById('metaConf').style.color=conf>=90?'var(--green)':conf>=70?'var(--amber)':'var(--red)';
+  document.getElementById('metaPlan').textContent=aiResult.query_plan||'Filter + Fetch';
+  document.getElementById('metaPlanSub').textContent=(aiResult.method||'find()')+' · '+dataset.length+' docs scanned';
+  document.getElementById('metaColl').textContent=activeColl;
+  document.getElementById('metaCollSub').textContent=dataset.length+' total docs';
 
   // Query display
   document.getElementById('qbMethod').textContent=aiResult.method||'find()';
-  document.getElementById('qbOperation').textContent=(aiResult.mongo_query||`db.${activeColl}.find(...)`).slice(0,72);
-  document.getElementById('queryOutput').textContent=aiResult.mongo_query||'// Generated by Claude AI';
+  document.getElementById('qbOp').textContent=(aiResult.mongo_query||`db.${activeColl}.find(...)`).slice(0,70);
+  document.getElementById('queryOut').textContent=aiResult.mongo_query||'// Generated by Claude AI';
 
-  // Render all views
+  // Explanation
+  document.getElementById('explainText').innerHTML=aiResult.explanation||`Query executed against <code>${activeColl}</code> collection.`;
+
+  // Render views
   renderTable(currentResultDocs,0);
   renderJSON(currentResultDocs);
 
-  // Summary
+  // Summary tab
   const salaries=currentResultDocs.filter(d=>d.salary).map(d=>d.salary);
   const avgSal=salaries.length?Math.round(salaries.reduce((a,b)=>a+b,0)/salaries.length):null;
   const summaryText=aiResult.summary||`Found ${currentResultDocs.length} documents.`;
   document.getElementById('summaryView').innerHTML=`
-    <div style="display:flex;gap:12px;align-items:flex-start;margin-bottom:18px;">
-      <span style="font-size:28px;flex-shrink:0;">✦</span>
+    <div style="display:flex;gap:12px;align-items:flex-start;margin-bottom:16px;">
+      <span style="font-size:26px;flex-shrink:0">✦</span>
       <div>
-        <div style="font-size:12px;font-weight:700;color:var(--mg-green);font-family:'JetBrains Mono',monospace;letter-spacing:1px;margin-bottom:6px;">AI RESULT SUMMARY</div>
-        <div style="font-size:13px;color:var(--text);line-height:1.8;">${summaryText.replace(/\*\*(.*?)\*\*/g,'<strong style="color:var(--mg-green)">$1</strong>').replace(/\`(.*?)\`/g,'<code style="background:rgba(0,237,100,0.1);color:var(--mg-green);padding:1px 5px;border-radius:3px;font-family:JetBrains Mono,monospace;font-size:11px;">$1</code>')}</div>
+        <div style="font-size:9px;font-weight:700;color:var(--green);font-family:'JetBrains Mono',monospace;letter-spacing:2px;margin-bottom:6px">QUERY RESULT SUMMARY</div>
+        <div style="font-size:13px;color:var(--text2);line-height:1.8">${summaryText.replace(/\*\*(.*?)\*\*/g,'<strong style="color:var(--green)">$1</strong>').replace(/\`(.*?)\`/g,'<code style="background:rgba(0,245,128,0.08);color:var(--green);padding:1px 5px;border-radius:3px;font-family:JetBrains Mono,monospace;font-size:10px">$1</code>')}</div>
       </div>
     </div>
-    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;">
-      <div style="background:rgba(0,237,100,0.06);border:1px solid rgba(0,237,100,0.15);border-radius:8px;padding:14px;">
-        <div style="font-size:9px;color:var(--muted);font-weight:700;letter-spacing:1.5px;margin-bottom:4px;">DOCS MATCHED</div>
-        <div style="font-size:26px;font-weight:900;color:var(--mg-green);">${currentResultDocs.length}</div>
-        <div style="font-size:10px;color:var(--muted);font-family:'JetBrains Mono',monospace;">of ${dataset.length} total</div>
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px">
+      <div style="background:rgba(0,245,128,0.05);border:1px solid rgba(0,245,128,0.12);border-radius:8px;padding:12px">
+        <div style="font-size:9px;color:var(--text3);font-weight:700;letter-spacing:1.5px;margin-bottom:3px">DOCS MATCHED</div>
+        <div style="font-size:24px;font-weight:800;color:var(--green)">${currentResultDocs.length}</div>
+        <div style="font-size:10px;color:var(--text3);font-family:'JetBrains Mono',monospace">of ${dataset.length} total</div>
       </div>
-      <div style="background:rgba(150,208,255,0.06);border:1px solid rgba(150,208,255,0.15);border-radius:8px;padding:14px;">
-        <div style="font-size:9px;color:var(--muted);font-weight:700;letter-spacing:1.5px;margin-bottom:4px;">FIELDS</div>
-        <div style="font-size:26px;font-weight:900;color:#96d0ff;">${numFields}</div>
-        <div style="font-size:10px;color:var(--muted);font-family:'JetBrains Mono',monospace;">per document</div>
+      <div style="background:rgba(77,184,255,0.05);border:1px solid rgba(77,184,255,0.12);border-radius:8px;padding:12px">
+        <div style="font-size:9px;color:var(--text3);font-weight:700;letter-spacing:1.5px;margin-bottom:3px">FIELDS</div>
+        <div style="font-size:24px;font-weight:800;color:var(--blue)">${numFields}</div>
+        <div style="font-size:10px;color:var(--text3);font-family:'JetBrains Mono',monospace">per document</div>
       </div>
-      <div style="background:rgba(245,158,11,0.06);border:1px solid rgba(245,158,11,0.15);border-radius:8px;padding:14px;">
-        <div style="font-size:9px;color:var(--muted);font-weight:700;letter-spacing:1.5px;margin-bottom:4px;">${avgSal?'AVG SALARY':'EXEC TIME'}</div>
-        <div style="font-size:26px;font-weight:900;color:var(--amber);">${avgSal?'$'+avgSal.toLocaleString():execMs+'ms'}</div>
-        <div style="font-size:10px;color:var(--muted);font-family:'JetBrains Mono',monospace;">${avgSal?'across results':'query runtime'}</div>
+      <div style="background:rgba(255,179,64,0.05);border:1px solid rgba(255,179,64,0.12);border-radius:8px;padding:12px">
+        <div style="font-size:9px;color:var(--text3);font-weight:700;letter-spacing:1.5px;margin-bottom:3px">${avgSal?'AVG SALARY':'EXEC TIME'}</div>
+        <div style="font-size:24px;font-weight:800;color:var(--amber)">${avgSal?'$'+avgSal.toLocaleString():execMs+'ms'}</div>
+        <div style="font-size:10px;color:var(--text3);font-family:'JetBrains Mono',monospace">${avgSal?'across results':'query runtime'}</div>
       </div>
     </div>`;
 
   // Charts
-  if((aiResult.method||'').startsWith('aggregate'))methodCounts.aggregate++;else methodCounts.find++;
-  timeHistory.push(execMs);timeHistory.shift();
+  if((aiResult.method||'').startsWith('agg')) methodCounts.aggregate++; else methodCounts.find++;
+  timeHistory.push(execMs); timeHistory.shift();
   buildCharts();
-  addLog('success',`Done — ${currentResultDocs.length} docs · ${numFields} fields · ${execMs}ms`);
+
+  addLog('s',`Done — ${currentResultDocs.length} docs · ${numFields} fields · ${execMs}ms · confidence ${conf}%`);
   document.getElementById('content').scrollTop=0;
 }
 
 function buildCharts(){
-  Chart.defaults.color='#7d8590';
+  Chart.defaults.color='#4d6070';
   Chart.defaults.font.family="'JetBrains Mono', monospace";
   Chart.defaults.font.size=10;
-  if(modelChart)modelChart.destroy();
-  if(timeChart)timeChart.destroy();
-  const gc='rgba(48,54,61,0.7)';
-  modelChart=new Chart(document.getElementById('methodChart'),{
+  if(methodChart) methodChart.destroy();
+  if(timeChart) timeChart.destroy();
+  const gc='rgba(30,42,54,0.8)';
+  methodChart=new Chart(document.getElementById('methodChart'),{
     type:'doughnut',
-    data:{labels:['find()','aggregate()','insert()','update()'],datasets:[{data:[methodCounts.find,methodCounts.aggregate,methodCounts.insert,methodCounts.update],backgroundColor:['rgba(0,237,100,0.7)','rgba(150,208,255,0.7)','rgba(245,158,11,0.7)','rgba(220,189,251,0.7)'],borderColor:['#00ed64','#96d0ff','#f59e0b','#dcbdfb'],borderWidth:1}]},
-    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'right',labels:{boxWidth:10,padding:10}}},cutout:'62%'}
+    data:{
+      labels:['find()','aggregate()','insert()','update()'],
+      datasets:[{
+        data:[methodCounts.find,methodCounts.aggregate,methodCounts.insert,methodCounts.update],
+        backgroundColor:['rgba(0,245,128,0.65)','rgba(77,184,255,0.65)','rgba(255,179,64,0.65)','rgba(180,142,255,0.65)'],
+        borderColor:['#00f580','#4db8ff','#ffb340','#b48eff'],
+        borderWidth:1
+      }]
+    },
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'right',labels:{boxWidth:10,padding:12,color:'#8fa3b5'}}},cutout:'65%'}
   });
   timeChart=new Chart(document.getElementById('timeChart'),{
     type:'line',
-    data:{labels:timeHistory.map((_,i)=>'Q'+(i+1)),datasets:[{data:timeHistory,borderColor:'#00ed64',backgroundColor:'rgba(0,237,100,0.07)',fill:true,tension:0.4,pointBackgroundColor:'#00ed64',pointRadius:3,borderWidth:2}]},
-    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{grid:{color:gc},ticks:{callback:v=>v+'ms'}},x:{grid:{display:false}}}}
+    data:{
+      labels:timeHistory.map((_,i)=>'Q'+(i+1)),
+      datasets:[{
+        data:timeHistory,
+        borderColor:'#00f580',
+        backgroundColor:'rgba(0,245,128,0.06)',
+        fill:true, tension:0.4,
+        pointBackgroundColor:'#00f580',
+        pointRadius:3, borderWidth:2
+      }]
+    },
+    options:{
+      responsive:true, maintainAspectRatio:false,
+      plugins:{legend:{display:false}},
+      scales:{
+        y:{grid:{color:gc},ticks:{callback:v=>v+'ms',color:'#4d6070'}},
+        x:{grid:{display:false},ticks:{color:'#4d6070'}}
+      }
+    }
   });
 }
 
-document.getElementById('queryInput').addEventListener('keydown',e=>{if(e.key==='Enter')runQuery();});
+document.getElementById('queryInput').addEventListener('keydown',e=>{ if(e.key==='Enter') runQuery(); });
+document.getElementById('queryInput').addEventListener('input', updateLiveExplain);
+
+// ── LIVE PLAIN-ENGLISH EXPLAIN ──
+function updateLiveExplain() {
+  const raw = document.getElementById('queryInput').value.trim();
+  const box = document.getElementById('liveExplain');
+  if (!raw) { box.style.display = 'none'; return; }
+  box.style.display = 'block';
+
+  const q = raw.toLowerCase();
+  const coll = activeColl || 'employees';
+
+  // Detect intent parts
+  const depts = ['sales','engineering','finance','marketing','operations','management'];
+  const dept = depts.find(d => q.includes(d));
+  const salOver = q.match(/(?:salary|earn|paid).*?(?:over|above|greater than|more than|>)\s*\$?([\d,]+)/);
+  const salUnder = q.match(/(?:salary|earn|paid).*?(?:under|below|less than|<)\s*\$?([\d,]+)/);
+  const topN = q.match(/top\s+(\d+)/);
+  const afterYear = q.match(/after\s+(20\d{2}|19\d{2})/);
+  const beforeYear = q.match(/before\s+(20\d{2}|19\d{2})/);
+  const isCount = q.includes('count') || q.includes('how many');
+  const isAvg = q.includes('average') || q.includes('avg') || q.includes('mean');
+  const isGroup = q.includes('group') || q.includes('per dept') || q.includes('by department') || q.includes('by dept') || (isAvg && q.includes('dept'));
+  const isSort = q.includes('highest') || q.includes('lowest') || q.includes('top') || q.includes('sort') || q.includes('order') || q.includes('rank');
+  const isActive = q.includes('active') && !q.includes('inactive');
+  const isInactive = q.includes('inactive');
+  const isOnLeave = q.includes('on-leave') || q.includes('on leave') || q.includes('leave');
+  const isAll = !dept && !salOver && !salUnder && !afterYear && !beforeYear && !isActive && !isInactive && !isOnLeave && !topN;
+  const nameMatch = q.match(/named?\s+([a-z]+)/);
+
+  // Build sentence parts
+  let icon = '🔍';
+  let parts = [];
+  let tags = [];
+
+  // Action
+  if (isCount && isGroup) {
+    icon = '📊';
+    parts.push(`Count how many people are in <mark>each department</mark>`);
+    tags.push({ cls:'action', icon:'📊', label:'Count + Group' });
+  } else if (isAvg && isGroup) {
+    icon = '📊';
+    parts.push(`Calculate the <mark>average salary</mark> for people in <mark>each department</mark>`);
+    tags.push({ cls:'action', icon:'📊', label:'Average + Group' });
+  } else if (isCount) {
+    icon = '🔢';
+    parts.push(`Count the total number of people`);
+    tags.push({ cls:'action', icon:'🔢', label:'Count' });
+  } else if (isGroup) {
+    icon = '📊';
+    parts.push(`Group people by <mark>department</mark> and show a summary`);
+    tags.push({ cls:'action', icon:'📊', label:'Group By' });
+  } else if (topN) {
+    icon = '🏆';
+    parts.push(`Find the <mark>top ${topN[1]}</mark> people`);
+    tags.push({ cls:'action', icon:'🔍', label:`Top ${topN[1]} only` });
+    tags.push({ cls:'limit', icon:'⬆', label:`Limit: ${topN[1]}` });
+  } else if (isAll) {
+    icon = '📋';
+    parts.push(`Show <mark>everyone</mark> in the <em>${coll}</em> table`);
+    tags.push({ cls:'action', icon:'📋', label:'Show All' });
+  } else {
+    icon = '🔍';
+    parts.push(`Find people`);
+    tags.push({ cls:'action', icon:'🔍', label:'Find' });
+  }
+
+  // Filters
+  const filters = [];
+  if (dept) {
+    filters.push(`who work in <mark>${dept.charAt(0).toUpperCase()+dept.slice(1)}</mark>`);
+    tags.push({ cls:'filter', icon:'🏢', label: dept.charAt(0).toUpperCase()+dept.slice(1) });
+  }
+  if (salOver) {
+    const amt = parseInt(salOver[1].replace(/,/g,''));
+    filters.push(`who earn more than <mark>$${amt.toLocaleString()}</mark> per year`);
+    tags.push({ cls:'filter', icon:'💰', label:`Salary > $${amt.toLocaleString()}` });
+  }
+  if (salUnder) {
+    const amt = parseInt(salUnder[1].replace(/,/g,''));
+    filters.push(`who earn less than <mark>$${amt.toLocaleString()}</mark> per year`);
+    tags.push({ cls:'filter', icon:'💰', label:`Salary < $${amt.toLocaleString()}` });
+  }
+  if (afterYear) {
+    filters.push(`who joined <mark>after ${afterYear[1]}</mark>`);
+    tags.push({ cls:'filter', icon:'📅', label:`After ${afterYear[1]}` });
+  }
+  if (beforeYear) {
+    filters.push(`who joined <mark>before ${beforeYear[1]}</mark>`);
+    tags.push({ cls:'filter', icon:'📅', label:`Before ${beforeYear[1]}` });
+  }
+  if (isActive) {
+    filters.push(`who are currently <mark>active</mark>`);
+    tags.push({ cls:'filter', icon:'✅', label:'Active only' });
+  }
+  if (isInactive) {
+    filters.push(`who are <mark>no longer active</mark>`);
+    tags.push({ cls:'filter', icon:'⛔', label:'Inactive only' });
+  }
+  if (isOnLeave) {
+    filters.push(`who are <mark>on leave</mark>`);
+    tags.push({ cls:'filter', icon:'🏖', label:'On leave' });
+  }
+  if (nameMatch) {
+    filters.push(`named <mark>${nameMatch[1].charAt(0).toUpperCase()+nameMatch[1].slice(1)}</mark>`);
+    tags.push({ cls:'filter', icon:'👤', label:nameMatch[1] });
+  }
+
+  if (filters.length) {
+    parts[0] += ' ' + filters.join(' and ');
+  }
+
+  // Sorting
+  if (q.includes('highest') || (q.includes('top') && q.includes('paid')) || q.includes('most paid')) {
+    parts.push(`, sorted from <mark>highest salary to lowest</mark>`);
+    tags.push({ cls:'sort', icon:'↕', label:'Sort: Salary ↓' });
+  } else if (q.includes('lowest') || q.includes('least paid')) {
+    parts.push(`, sorted from <mark>lowest salary to highest</mark>`);
+    tags.push({ cls:'sort', icon:'↕', label:'Sort: Salary ↑' });
+  } else if (q.includes('newest') || q.includes('recently hired') || q.includes('latest')) {
+    parts.push(`, sorted by <mark>most recently hired first</mark>`);
+    tags.push({ cls:'sort', icon:'↕', label:'Sort: Date ↓' });
+  } else if (q.includes('oldest') || q.includes('longest')) {
+    parts.push(`, sorted by <mark>earliest hire date first</mark>`);
+    tags.push({ cls:'sort', icon:'↕', label:'Sort: Date ↑' });
+  }
+
+  parts.push('.');
+
+  document.getElementById('leIcon').textContent = icon;
+  document.getElementById('leSentence').innerHTML = parts.join('');
+  document.getElementById('leTags').innerHTML = tags.map(t =>
+    `<span class="le-tag ${t.cls}"><span class="tt">${t.icon}</span>${t.label}</span>`
+  ).join('');
+}
+
+// ── PRE-POPULATE table + JSON with default dataset on load ──
+(function initDefaultView(){
+  currentResultDocs = DEFAULT_DATA;
+  renderTable(DEFAULT_DATA, 0);
+  renderJSON(DEFAULT_DATA);
+  // Show results panel immediately so table/JSON are visible
+  document.getElementById('emptyState').style.display='none';
+  document.getElementById('results').style.display='block';
+  // Pipeline — all done
+  for(let i=1;i<=6;i++){const p=document.getElementById('ps'+i);p.className='ps done';p.querySelector('.ps-icon').textContent='✓';}
+  // Default query display
+  document.getElementById('qbMethod').textContent='find()';
+  document.getElementById('qbOp').textContent=`db.employees.find({}) — 35 documents`;
+  document.getElementById('queryOut').textContent=`db.employees.find({})`;
+  // Explanation
+  document.getElementById('explainText').innerHTML=`Returns <strong>all 35 documents</strong> from the <code>employees</code> collection with no filter applied. Type a query above to filter, sort, or aggregate the data.`;
+  // Meta row
+  document.getElementById('metaConf').textContent='100%';
+  document.getElementById('confBar').style.width='100%';
+  document.getElementById('metaPlan').textContent='Full Scan';
+  document.getElementById('metaPlanSub').textContent='find() · 35 docs scanned';
+  document.getElementById('metaColl').textContent='employees';
+  document.getElementById('metaCollSub').textContent='35 total docs';
+  // Stats
+  document.getElementById('statDocs').textContent=DEFAULT_DATA.length;
+  document.getElementById('statFields').textContent=Object.keys(DEFAULT_DATA[0]).length;
+  document.getElementById('statTime').textContent='0ms';
+  document.getElementById('statIdx').textContent='COLLSCAN';
+  // Result badge
+  document.getElementById('resultBadge').textContent='Default Dataset';
+  // Charts
+  buildCharts();
+  // Summary
+  const salaries=DEFAULT_DATA.map(d=>d.salary);
+  const avgSal=Math.round(salaries.reduce((a,b)=>a+b,0)/salaries.length);
+  document.getElementById('summaryView').innerHTML=`
+    <div style="display:flex;gap:12px;align-items:flex-start;margin-bottom:16px;">
+      <span style="font-size:26px;flex-shrink:0">✦</span>
+      <div>
+        <div style="font-size:9px;font-weight:700;color:var(--green);font-family:'JetBrains Mono',monospace;letter-spacing:2px;margin-bottom:6px">QUERY RESULT SUMMARY</div>
+        <div style="font-size:13px;color:var(--text2);line-height:1.8">Showing all <strong style="color:var(--green)">${DEFAULT_DATA.length}</strong> documents from the default <code style="background:rgba(0,245,128,0.08);color:var(--green);padding:1px 5px;border-radius:3px;font-family:JetBrains Mono,monospace;font-size:10px">employees</code> collection. Type a query above to filter results.</div>
+      </div>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px">
+      <div style="background:rgba(0,245,128,0.05);border:1px solid rgba(0,245,128,0.12);border-radius:8px;padding:12px">
+        <div style="font-size:9px;color:var(--text3);font-weight:700;letter-spacing:1.5px;margin-bottom:3px">DOCS MATCHED</div>
+        <div style="font-size:24px;font-weight:800;color:var(--green)">${DEFAULT_DATA.length}</div>
+        <div style="font-size:10px;color:var(--text3);font-family:'JetBrains Mono',monospace">of ${DEFAULT_DATA.length} total</div>
+      </div>
+      <div style="background:rgba(77,184,255,0.05);border:1px solid rgba(77,184,255,0.12);border-radius:8px;padding:12px">
+        <div style="font-size:9px;color:var(--text3);font-weight:700;letter-spacing:1.5px;margin-bottom:3px">FIELDS</div>
+        <div style="font-size:24px;font-weight:800;color:var(--blue)">${Object.keys(DEFAULT_DATA[0]).length}</div>
+        <div style="font-size:10px;color:var(--text3);font-family:'JetBrains Mono',monospace">per document</div>
+      </div>
+      <div style="background:rgba(255,179,64,0.05);border:1px solid rgba(255,179,64,0.12);border-radius:8px;padding:12px">
+        <div style="font-size:9px;color:var(--text3);font-weight:700;letter-spacing:1.5px;margin-bottom:3px">AVG SALARY</div>
+        <div style="font-size:24px;font-weight:800;color:var(--amber)">$${avgSal.toLocaleString()}</div>
+        <div style="font-size:10px;color:var(--text3);font-family:'JetBrains Mono',monospace">across all employees</div>
+      </div>
+    </div>`;
+})();
 </script>
 </body>
 </html>
