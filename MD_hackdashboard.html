@@ -1354,6 +1354,18 @@ function updateLiveExplain() {
       </div>
     </div>`;
 })();
+  // Protect dashboard
+if (localStorage.getItem("isLoggedIn") !== "true") {
+    window.location.href = "login-signup.html";
+}
+// Optional: show username in console
+const username = localStorage.getItem("userUsername");
+console.log("Logged in as:", username);
+// Logout function (connect to logout button)
+function logoutUser() {
+    localStorage.removeItem("isLoggedIn");
+    window.location.href = "login-signup.html";
+}
 </script>
 </body>
 </html>
