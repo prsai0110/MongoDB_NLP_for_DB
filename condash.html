@@ -1,0 +1,869 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MongoQuery — AI Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=DM+Sans:wght@300;400;500;600;700&family=Syne:wght@700;800&display=swap" rel="stylesheet">
+<style>
+/* ============================================================
+   GLOBAL RESET
+============================================================ */
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;overflow:hidden;font-family:'DM Sans',sans-serif}
+
+/* ============================================================
+   AUTH PAGES (LOGIN / SIGNUP)
+============================================================ */
+#auth-layer{
+  position:fixed;inset:0;z-index:100;
+  background:linear-gradient(135deg,#0f0c29 0%,#1a1060 40%,#24243e 100%);
+  display:flex;align-items:center;justify-content:center;overflow:hidden;
+}
+
+/* Stars canvas behind */
+#stars-canvas{position:absolute;inset:0;pointer-events:none}
+
+/* Floating orbs */
+.orb{
+  position:absolute;border-radius:50%;pointer-events:none;
+  animation:orb-float linear infinite;
+}
+.orb1{width:300px;height:300px;background:radial-gradient(circle,rgba(88,86,214,.35) 0%,transparent 70%);top:-80px;left:-80px;animation-duration:20s}
+.orb2{width:200px;height:200px;background:radial-gradient(circle,rgba(130,80,255,.3) 0%,transparent 70%);bottom:10%;right:5%;animation-duration:15s;animation-delay:-7s}
+.orb3{width:150px;height:150px;background:radial-gradient(circle,rgba(63,185,80,.2) 0%,transparent 70%);top:40%;left:10%;animation-duration:18s;animation-delay:-4s}
+@keyframes orb-float{0%{transform:translateY(0) rotate(0deg)}50%{transform:translateY(-40px) rotate(180deg)}100%{transform:translateY(0) rotate(360deg)}}
+
+/* Anti-gravity particles */
+.particle{
+  position:absolute;border-radius:50%;pointer-events:none;
+  animation:particle-rise linear infinite;
+}
+@keyframes particle-rise{
+  0%{transform:translateY(0) translateX(0) scale(1);opacity:.8}
+  33%{transform:translateY(-35vh) translateX(20px) scale(1.3);opacity:.6}
+  66%{transform:translateY(-65vh) translateX(-15px) scale(.8);opacity:.4}
+  100%{transform:translateY(-100vh) translateX(10px) scale(.3);opacity:0}
+}
+
+/* Floating molecules */
+.mol{
+  position:absolute;pointer-events:none;
+  animation:mol-drift ease-in-out infinite;
+}
+@keyframes mol-drift{
+  0%,100%{transform:translateY(0) rotate(0deg)}
+  25%{transform:translateY(-20px) rotate(90deg)}
+  50%{transform:translateY(-35px) rotate(180deg)}
+  75%{transform:translateY(-10px) rotate(270deg)}
+}
+
+/* Twinkling rings */
+.ring{
+  position:absolute;border-radius:50%;border:1px solid rgba(255,255,255,.08);pointer-events:none;
+  animation:ring-pulse ease-in-out infinite;
+}
+@keyframes ring-pulse{0%,100%{transform:scale(1);opacity:.5}50%{transform:scale(1.15);opacity:.2}}
+
+/* Auth card */
+.auth-card{
+  position:relative;z-index:10;
+  width:400px;
+  background:rgba(255,255,255,.07);
+  backdrop-filter:blur(24px);
+  border:1px solid rgba(255,255,255,.15);
+  border-radius:24px;
+  padding:40px 36px;
+  box-shadow:0 24px 64px rgba(0,0,0,.4),inset 0 1px 0 rgba(255,255,255,.15);
+  animation:card-in .6s cubic-bezier(.34,1.56,.64,1) both;
+}
+@keyframes card-in{from{opacity:0;transform:translateY(30px) scale(.95)}to{opacity:1;transform:none}}
+
+.auth-logo{
+  display:flex;align-items:center;gap:10px;margin-bottom:28px;justify-content:center;
+}
+.auth-logo-icon{
+  width:36px;height:36px;border-radius:9px;
+  background:linear-gradient(135deg,#3fb950,#238636);
+  display:flex;align-items:center;justify-content:center;font-size:18px;
+  box-shadow:0 4px 14px rgba(63,185,80,.4);
+}
+.auth-logo-txt{font-family:'Syne',sans-serif;font-size:22px;font-weight:800;color:#fff}
+.auth-logo-txt span{color:#3fb950}
+
+.auth-title{font-family:'Syne',sans-serif;font-size:26px;font-weight:800;color:#fff;text-align:center;margin-bottom:6px}
+.auth-sub{font-size:13px;color:rgba(255,255,255,.5);text-align:center;margin-bottom:28px}
+
+.auth-field{
+  position:relative;margin-bottom:14px;
+}
+.auth-field .icon{
+  position:absolute;left:14px;top:50%;transform:translateY(-50%);
+  color:rgba(255,255,255,.35);font-size:16px;pointer-events:none;
+}
+.auth-input{
+  width:100%;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);
+  border-radius:12px;padding:13px 14px 13px 42px;
+  font-family:'DM Sans',sans-serif;font-size:14px;color:#fff;outline:none;
+  transition:.25s;
+}
+.auth-input::placeholder{color:rgba(255,255,255,.3)}
+.auth-input:focus{border-color:rgba(88,86,214,.7);background:rgba(255,255,255,.12);box-shadow:0 0 0 3px rgba(88,86,214,.2)}
+
+.auth-btn{
+  width:100%;padding:14px;border-radius:12px;border:none;cursor:pointer;
+  font-family:'Syne',sans-serif;font-size:16px;font-weight:700;
+  background:linear-gradient(135deg,#5856d6,#8a4fff);color:#fff;
+  box-shadow:0 6px 20px rgba(88,86,214,.4);
+  transition:.25s;margin-top:4px;
+}
+.auth-btn:hover{transform:translateY(-2px);box-shadow:0 10px 28px rgba(88,86,214,.55)}
+.auth-btn:active{transform:none}
+
+.auth-divider{text-align:center;font-size:12px;color:rgba(255,255,255,.35);margin:16px 0}
+
+.auth-switch{text-align:center;font-size:13px;color:rgba(255,255,255,.45)}
+.auth-switch a{color:#8a4fff;text-decoration:none;font-weight:600;cursor:pointer}
+.auth-switch a:hover{color:#b07cff}
+
+.auth-error{
+  background:rgba(248,81,73,.12);border:1px solid rgba(248,81,73,.3);
+  border-radius:8px;padding:9px 12px;font-size:12px;color:#f85149;
+  margin-bottom:12px;display:none;
+}
+.auth-error.show{display:block}
+
+/* Page transitions */
+#login-page,#signup-page{
+  position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+  transition:opacity .4s,transform .4s;
+}
+.page-hidden{opacity:0;transform:translateX(-40px);pointer-events:none}
+.page-enter{animation:page-in .4s ease both}
+@keyframes page-in{from{opacity:0;transform:translateX(40px)}to{opacity:1;transform:none}}
+
+/* ============================================================
+   DASHBOARD
+============================================================ */
+#dashboard-layer{
+  position:fixed;inset:0;z-index:50;
+  background:#0d1117;color:#e6edf3;
+  display:flex;flex-direction:column;
+  opacity:0;pointer-events:none;
+  transition:opacity .6s ease;
+}
+#dashboard-layer.active{opacity:1;pointer-events:all}
+
+:root{--bg:#0d1117;--bg2:#161b22;--bg3:#1c2128;--bg4:#21262d;--border:#30363d;--green:#3fb950;--gdim:#238636;--gglow:rgba(63,185,80,0.12);--blue:#58a6ff;--yellow:#e3b341;--orange:#f0883e;--red:#f85149;--purple:#bc8cff;--text:#e6edf3;--muted:#7d8590;--dim:#484f58}
+
+/* TOPBAR */
+.topbar{height:50px;background:var(--bg2);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 18px;flex-shrink:0}
+.logo{display:flex;align-items:center;gap:9px;font-family:'Syne',sans-serif;font-size:17px;font-weight:800}.logo-icon{width:30px;height:30px;background:var(--green);border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:15px}.logo span{color:var(--green)}
+.tb-mid{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--muted);background:var(--bg3);padding:5px 14px;border-radius:6px;border:1px solid var(--border)}.tb-mid .g{color:var(--green)}
+.tb-right{display:flex;align-items:center;gap:10px}
+
+.vbadge{background:var(--bg4);border:1px solid var(--border);color:var(--muted);padding:3px 9px;border-radius:5px;font-size:12px}
+.conn{display:flex;align-items:center;gap:5px;font-size:12px;color:var(--green)}
+.dot{width:7px;height:7px;border-radius:50%;background:var(--green);box-shadow:0 0 6px var(--green);animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+.user-badge{display:flex;align-items:center;gap:7px;background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:4px 10px;cursor:pointer;transition:.15s;font-size:12px}
+.user-badge:hover{border-color:var(--green);color:var(--green)}
+.user-avatar{width:22px;height:22px;border-radius:50%;background:linear-gradient(135deg,#5856d6,#8a4fff);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#fff}
+
+/* LAYOUT */
+.layout{display:flex;flex:1;overflow:hidden}
+/* SIDEBAR */
+.sidebar{width:215px;background:var(--bg2);border-right:1px solid var(--border);overflow-y:auto;flex-shrink:0}
+.sb-sec{padding:14px 10px 6px}.sb-lbl{font-size:10px;font-weight:600;letter-spacing:.08em;color:var(--dim);text-transform:uppercase;margin-bottom:7px;padding:0 8px}
+.ni{display:flex;align-items:center;gap:9px;padding:7px 10px;border-radius:6px;cursor:pointer;font-size:13px;color:var(--muted);transition:.15s;margin-bottom:2px}.ni:hover{background:var(--bg3);color:var(--text)}.ni.act{background:var(--gglow);color:var(--green);border:1px solid rgba(63,185,80,.2)}
+.nb{margin-left:auto;background:var(--green);color:#000;font-size:10px;font-weight:700;padding:1px 6px;border-radius:10px}
+.ci{display:flex;align-items:center;gap:8px;padding:6px 10px;border-radius:6px;cursor:pointer;font-size:12px;color:var(--muted);transition:.15s}.ci:hover,.ci.act{background:var(--bg3);color:var(--text)}
+.cc{margin-left:auto;font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--dim)}
+.og{display:grid;grid-template-columns:1fr 1fr;gap:5px;padding:0 10px 10px}
+.ob{padding:6px 4px;background:var(--bg3);border:1px solid var(--border);border-radius:5px;font-size:11px;font-family:'JetBrains Mono',monospace;color:var(--muted);cursor:pointer;transition:.15s;text-align:center}.ob:hover{border-color:var(--green);color:var(--green)}.ob.act{background:var(--gglow);border-color:var(--green);color:var(--green)}
+/* MAIN SCROLL */
+.main{flex:1;overflow-y:auto;display:flex;flex-direction:column}
+/* QUERY */
+.qs{padding:16px 20px;border-bottom:1px solid var(--border);background:var(--bg2);flex-shrink:0}
+.qmeta{font-size:10px;color:var(--dim);letter-spacing:.07em;text-transform:uppercase;margin-bottom:9px;display:flex;align-items:center;gap:8px}
+.ctag{background:var(--gglow);border:1px solid rgba(63,185,80,.25);color:var(--green);padding:2px 9px;border-radius:4px;font-size:11px;display:flex;align-items:center;gap:4px}
+.qrow{display:flex;gap:9px;align-items:center}
+.qi{flex:1;background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:11px 15px;font-family:'DM Sans',sans-serif;font-size:15px;color:var(--text);outline:none;transition:.2s}.qi:focus{border-color:var(--green);box-shadow:0 0 0 3px var(--gglow)}.qi::placeholder{color:var(--dim)}
+.bcl{background:transparent;border:1px solid var(--border);color:var(--muted);padding:10px 14px;border-radius:8px;font-size:13px;cursor:pointer;transition:.15s;font-family:'DM Sans',sans-serif}.bcl:hover{color:var(--text);border-color:var(--muted)}
+.brun{background:var(--green);color:#000;border:none;padding:11px 20px;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:7px;transition:.2s;white-space:nowrap;font-family:'DM Sans',sans-serif}.brun:hover{background:#56d364;box-shadow:0 4px 14px rgba(63,185,80,.3)}.brun.ld{background:var(--gdim);cursor:not-allowed}
+.chips{display:flex;gap:7px;margin-top:9px;flex-wrap:wrap}
+.chip{background:var(--bg3);border:1px solid var(--border);color:var(--muted);padding:4px 11px;border-radius:20px;font-size:12px;cursor:pointer;transition:.15s}.chip:hover{border-color:var(--green);color:var(--green)}
+/* PIPELINE */
+.pipe{display:none;align-items:center;background:var(--bg2);border-bottom:1px solid var(--border);padding:0 20px;overflow-x:auto;flex-shrink:0}.pipe.on{display:flex}
+.ps{display:flex;flex-direction:column;align-items:center;padding:12px 18px;gap:4px;flex-shrink:0}
+.pi{font-size:18px}.pi.done{color:var(--green)}.pi.pend{color:var(--dim)}.pi.run{color:var(--yellow);animation:spin .6s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.pl{font-size:11px;font-weight:600;color:var(--dim)}.pl.done{color:var(--green)}
+.psep{color:var(--dim);font-size:18px;flex-shrink:0}
+/* CODE */
+.cb{background:var(--bg2);border-bottom:1px solid var(--border);padding:0 20px 16px;display:none;flex-shrink:0}.cb.on{display:block}
+.ch{display:flex;align-items:center;gap:10px;margin-bottom:10px;padding-top:14px}
+.cop{background:rgba(63,185,80,.15);border:1px solid rgba(63,185,80,.3);color:var(--green);font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:600;padding:3px 10px;border-radius:4px}
+.csum{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--muted)}
+.cbody{background:#0d1117;border:1px solid var(--border);border-left:3px solid var(--green);border-radius:8px;padding:16px 18px;font-family:'JetBrains Mono',monospace;font-size:13px;line-height:1.7;position:relative}
+.ccopy{position:absolute;top:10px;right:10px;background:var(--bg3);border:1px solid var(--border);color:var(--muted);padding:4px 10px;border-radius:5px;font-size:11px;cursor:pointer;transition:.15s}.ccopy:hover{color:var(--text)}
+.kw{color:var(--blue)}.fn{color:var(--green)}.str{color:var(--orange)}.op{color:var(--yellow)}.cm{color:var(--dim)}
+/* STATS */
+.sc{display:none;grid-template-columns:repeat(4,1fr);gap:12px;padding:16px 20px;background:var(--bg2);border-bottom:1px solid var(--border);flex-shrink:0}.sc.on{display:grid}
+.scard{background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:16px 18px}
+.slbl{font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:8px}
+.sval{font-size:28px;font-weight:700;font-family:'JetBrains Mono',monospace;line-height:1}
+.sval.g{color:var(--green)}.sval.y{color:var(--yellow)}.sval.o{color:var(--orange)}.sval.p{color:var(--purple)}
+.ssub{font-size:11px;color:var(--dim);margin-top:5px}
+/* EXPLANATION */
+.expl{padding:20px;border-bottom:1px solid var(--border);display:none;flex-shrink:0}.expl.on{display:block}
+.expl-hdr{font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--dim);margin-bottom:14px;display:flex;align-items:center;gap:6px}
+.eg{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.ehero{background:linear-gradient(135deg,rgba(63,185,80,.09),rgba(63,185,80,.03));border:1px solid rgba(63,185,80,.2);border-radius:12px;padding:18px 20px;grid-column:1/-1}
+.ehero-lbl{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--green);margin-bottom:6px}
+.ehero-q{font-size:17px;font-weight:600;color:var(--text);margin-bottom:5px}
+.ehero-sub{font-size:13px;color:var(--muted)}
+.esteps{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:16px 18px}
+.esteps-ttl{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--dim);margin-bottom:12px}
+.estep{display:flex;gap:12px;margin-bottom:14px;position:relative}.estep:not(:last-child)::before{content:'';position:absolute;left:11px;top:26px;bottom:-6px;width:1px;background:var(--border)}
+.enum{width:24px;height:24px;border-radius:50%;background:var(--gglow);border:1px solid var(--green);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:var(--green);flex-shrink:0}
+.ebody{flex:1}.ehead{font-size:13px;font-weight:600;color:var(--text);margin-bottom:3px}.edesc{font-size:12px;color:var(--muted);line-height:1.55}
+.efound{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:16px 18px}
+.efound-ttl{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--dim);margin-bottom:10px}
+.efound-txt{font-size:13px;color:var(--text);line-height:1.7}.hl{color:var(--green);font-weight:600}
+.ins{display:flex;align-items:flex-start;gap:8px;padding:9px 12px;background:var(--bg3);border:1px solid var(--border);border-radius:7px;margin-bottom:7px;font-size:12px;color:var(--text);line-height:1.5}
+.enext{grid-column:1/-1}.enext-ttl{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--dim);margin-bottom:10px}
+.ngrid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.nbtn{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:10px 12px;font-size:12px;color:var(--muted);cursor:pointer;text-align:left;transition:.15s;font-family:'DM Sans',sans-serif;display:flex;align-items:center;gap:7px}.nbtn:hover{border-color:var(--green);color:var(--green);background:var(--gglow)}
+/* RESULTS */
+.rs{padding:20px;display:none;flex-shrink:0}.rs.on{display:block}
+.rh{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+.rt{font-size:14px;font-weight:600;display:flex;align-items:center;gap:10px}
+.rbadge{background:var(--gglow);border:1px solid rgba(63,185,80,.3);color:var(--green);font-size:10px;font-weight:600;padding:2px 9px;border-radius:4px;letter-spacing:.04em}
+.rcnt{background:var(--bg3);border:1px solid var(--border);color:var(--muted);font-size:11px;padding:2px 9px;border-radius:10px}
+.expbtn{font-size:12px;color:var(--muted);cursor:pointer;transition:.15s}.expbtn:hover{color:var(--text)}
+.tabs{display:flex;border-bottom:1px solid var(--border);margin-bottom:16px}
+.tab{padding:9px 16px;font-size:13px;cursor:pointer;color:var(--muted);border-bottom:2px solid transparent;transition:.15s;display:flex;align-items:center;gap:5px;margin-bottom:-1px}.tab:hover{color:var(--text)}.tab.act{color:var(--green);border-bottom-color:var(--green)}
+.dtable{width:100%;border-collapse:collapse;font-size:12px}
+.dtable th{text-align:left;padding:8px 12px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--dim);border-bottom:1px solid var(--border);background:var(--bg3)}
+.dtable td{padding:10px 12px;border-bottom:1px solid rgba(48,54,61,.5);font-family:'JetBrains Mono',monospace;font-size:12px}.dtable tr:hover td{background:var(--bg3)}
+.tdept{display:inline-block;background:rgba(188,140,255,.1);border:1px solid rgba(188,140,255,.25);color:var(--purple);padding:1px 8px;border-radius:4px;font-size:11px}
+.tact{color:var(--green);font-size:11px}.tina{color:var(--red);font-size:11px}
+/* CHARTS */
+.cg{display:none;grid-template-columns:1fr 1fr;gap:14px;padding:0 20px 20px;flex-shrink:0}.cg.on{display:grid}
+.ccard{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:18px}
+.cttl{font-size:13px;font-weight:600;margin-bottom:4px}.csub{font-size:11px;color:var(--muted);margin-bottom:14px}
+canvas{display:block;max-width:100%}
+/* LOG */
+.lp{margin:0 20px 20px;background:var(--bg2);border:1px solid var(--border);border-radius:10px;flex-shrink:0;display:none}.lp.on{display:block}
+.lh{display:flex;align-items:center;justify-content:space-between;padding:10px 16px;border-bottom:1px solid var(--border)}
+.lt2{font-size:13px;font-weight:600}.live{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--green)}
+.lb{padding:10px 16px;font-family:'JetBrains Mono',monospace;font-size:11px;display:flex;flex-direction:column;gap:3px;max-height:110px;overflow-y:auto}
+.ll{display:flex;gap:10px}.ltm{color:var(--dim)}.li{color:var(--blue)}.ls{color:var(--green)}.lw{color:var(--yellow)}.lm{color:var(--muted)}
+
+/* Toast */
+.toast{
+  position:fixed;top:18px;right:18px;z-index:999;
+  background:#1c2128;border:1px solid var(--green);
+  color:#fff;padding:12px 18px;border-radius:10px;
+  font-size:13px;display:flex;align-items:center;gap:10px;
+  box-shadow:0 8px 24px rgba(0,0,0,.4);
+  animation:toast-in .4s ease,toast-out .4s ease 2.8s both;
+  pointer-events:none;
+}
+@keyframes toast-in{from{opacity:0;transform:translateX(30px)}to{opacity:1;transform:none}}
+@keyframes toast-out{from{opacity:1;transform:none}to{opacity:0;transform:translateX(30px)}}
+</style>
+</head>
+<body>
+
+<!-- ============================================================
+     AUTH LAYER
+============================================================ -->
+<div id="auth-layer">
+  <canvas id="stars-canvas"></canvas>
+  <div class="orb orb1"></div>
+  <div class="orb orb2"></div>
+  <div class="orb orb3"></div>
+  <!-- particles & rings injected by JS -->
+
+  <!-- LOGIN PAGE -->
+  <div id="login-page">
+    <div class="auth-card">
+      <div class="auth-logo">
+        <div class="auth-logo-icon">🍃</div>
+        <div class="auth-logo-txt">Mongo<span>Query</span></div>
+      </div>
+      <div class="auth-title">Welcome back</div>
+      <div class="auth-sub">Sign in to your AI dashboard</div>
+      <div class="auth-error" id="login-err">Invalid username or password</div>
+      <div class="auth-field"><span class="icon">👤</span><input class="auth-input" id="l-user" type="text" placeholder="Username or Email"></div>
+      <div class="auth-field"><span class="icon">🔒</span><input class="auth-input" id="l-pass" type="password" placeholder="Password"></div>
+      <button class="auth-btn" onclick="doLogin()">Sign In</button>
+      <div class="auth-divider">— or —</div>
+      <div class="auth-switch">Don't have an account? <a onclick="showSignup()">Create one</a></div>
+    </div>
+  </div>
+
+  <!-- SIGNUP PAGE -->
+  <div id="signup-page" class="page-hidden">
+    <div class="auth-card">
+      <div class="auth-logo">
+        <div class="auth-logo-icon">🍃</div>
+        <div class="auth-logo-txt">Mongo<span>Query</span></div>
+      </div>
+      <div class="auth-title">Create Account</div>
+      <div class="auth-sub">Join MongoQuery today</div>
+      <div class="auth-error" id="signup-err" id="signup-err"></div>
+      <div class="auth-field"><span class="icon">👤</span><input class="auth-input" id="s-user" type="text" placeholder="Username"></div>
+      <div class="auth-field"><span class="icon">✉️</span><input class="auth-input" id="s-email" type="email" placeholder="Email"></div>
+      <div class="auth-field"><span class="icon">🔒</span><input class="auth-input" id="s-pass" type="password" placeholder="Password"></div>
+      <div class="auth-field"><span class="icon">🔒</span><input class="auth-input" id="s-pass2" type="password" placeholder="Confirm Password"></div>
+      <button class="auth-btn" onclick="doSignup()">Sign Up</button>
+      <div class="auth-divider">— or —</div>
+      <div class="auth-switch">Already have an account? <a onclick="showLogin()">Sign in</a></div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================
+     DASHBOARD LAYER
+============================================================ -->
+<div id="dashboard-layer">
+
+<div class="topbar">
+  <div class="logo"><div class="logo-icon">🍃</div>Mongo<span>Query</span></div>
+  <div class="tb-mid">db.<span class="g">employees</span> .find(...)</div>
+  <div class="tb-right">
+    <div class="vbadge">v7.0</div>
+    <div class="conn"><div class="dot"></div> CONNECTED</div>
+    <div class="user-badge" onclick="doLogout()">
+      <div class="user-avatar" id="uav">?</div>
+      <span id="uname">user</span>
+      <span style="color:var(--dim);font-size:10px">↩</span>
+    </div>
+  </div>
+</div>
+
+<div class="layout">
+<aside class="sidebar">
+  <div class="sb-sec">
+    <div class="sb-lbl">Navigation</div>
+    <div class="ni act">⚡ Query Generator <span class="nb">5</span></div>
+    <div class="ni">📊 Aggregations</div>
+    <div class="ni">📁 Collections</div>
+    <div class="ni">🕐 Query History</div>
+    <div class="ni">🔍 Indexes</div>
+    <div class="ni">⚙️ Settings</div>
+  </div>
+  <div class="sb-sec">
+    <div class="sb-lbl">Collections</div>
+    <div class="ci act">📂 employees <span class="cc">1,240</span></div>
+    <div class="ci">📂 departments <span class="cc">12</span></div>
+    <div class="ci">📂 projects <span class="cc">348</span></div>
+    <div class="ci">📂 salaries <span class="cc">4,820</span></div>
+  </div>
+  <div class="sb-sec"><div class="sb-lbl">Operation Type</div></div>
+  <div class="og">
+    <div class="ob act">find()</div><div class="ob">aggregate()</div>
+    <div class="ob">insertOne()</div><div class="ob">updateMany()</div>
+    <div class="ob">deleteOne()</div><div class="ob">countDocs()</div>
+  </div>
+</aside>
+
+<main class="main" id="ms">
+  <div class="qs">
+    <div class="qmeta">Natural Language → MongoDB + Real Results <div class="ctag">🍃 db.employees</div></div>
+    <div class="qrow">
+      <input class="qi" id="qi" placeholder="Ask in plain English… e.g. Who earns the most?" value="Hired after 2020">
+      <button class="bcl" onclick="clearQ()">Clear</button>
+      <button class="brun" id="rb" onclick="runQuery()">⚡ Generate + Run</button>
+    </div>
+    <div class="chips">
+      <div class="chip" onclick="sq('Find all employees in Sales')">Find all employees in Sales</div>
+      <div class="chip" onclick="sq('Top 5 highest paid')">Top 5 highest paid</div>
+      <div class="chip" onclick="sq('Count by department')">Count by department</div>
+      <div class="chip" onclick="sq('Hired after 2020')">Hired after 2020</div>
+      <div class="chip" onclick="sq('Average salary per dept')">Average salary per dept</div>
+    </div>
+  </div>
+
+  <div class="pipe" id="pipe">
+    <div class="ps"><div class="pi pend" id="p1">○</div><div class="pl" id="l1">Tokenize</div></div>
+    <div class="psep">›</div>
+    <div class="ps"><div class="pi pend" id="p2">○</div><div class="pl" id="l2">Intent</div></div>
+    <div class="psep">›</div>
+    <div class="ps"><div class="pi pend" id="p3">○</div><div class="pl" id="l3">Schema Map</div></div>
+    <div class="psep">›</div>
+    <div class="ps"><div class="pi pend" id="p4">○</div><div class="pl" id="l4">Query Gen</div></div>
+    <div class="psep">›</div>
+    <div class="ps"><div class="pi pend" id="p5">○</div><div class="pl" id="l5">Optimize</div></div>
+    <div class="psep">›</div>
+    <div class="ps"><div class="pi pend" id="p6">○</div><div class="pl" id="l6">Execute</div></div>
+  </div>
+
+  <div class="cb" id="cb">
+    <div class="ch">
+      <div class="cop" id="cop">find()</div>
+      <div class="csum" id="csum"></div>
+    </div>
+    <div class="cbody">
+      <button class="ccopy" onclick="copyCode()">Copy</button>
+      <div id="cd"></div>
+    </div>
+  </div>
+
+  <div class="sc" id="sc">
+    <div class="scard"><div class="slbl">Documents</div><div class="sval g" id="sd">—</div><div class="ssub">matched</div></div>
+    <div class="scard"><div class="slbl">Confidence</div><div class="sval y" id="sf">—</div><div class="ssub">model accuracy</div></div>
+    <div class="scard"><div class="slbl">Exec Time</div><div class="sval o" id="st">—</div><div class="ssub">milliseconds</div></div>
+    <div class="scard"><div class="slbl">Index Used</div><div class="sval p" id="si">—</div><div class="ssub">scan type</div></div>
+  </div>
+
+  <div class="expl" id="expl">
+    <div class="expl-hdr">💡 Plain English Explanation</div>
+    <div class="eg" id="eg"></div>
+  </div>
+
+  <div class="rs" id="rs">
+    <div class="rh">
+      <div class="rt">⚡ Query Results <span class="rcnt" id="rc"></span></div>
+      <div class="expbtn" onclick="exportJ()">↓ Export JSON</div>
+    </div>
+    <div class="tabs">
+      <div class="tab act" onclick="st2('t',this)">⊞ Table</div>
+      <div class="tab" onclick="st2('j',this)">{ } JSON</div>
+    </div>
+    <div id="tt"><table class="dtable"><thead id="th"></thead><tbody id="tb"></tbody></table></div>
+    <div id="tj" style="display:none"><pre id="jp" style="font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--muted);white-space:pre-wrap;background:var(--bg3);padding:16px;border-radius:8px;border:1px solid var(--border)"></pre></div>
+  </div>
+
+  <div class="cg" id="cg">
+    <div class="ccard"><div class="cttl">Query Method Distribution</div><div class="csub">Usage across query types this session</div><canvas id="dc" width="360" height="230"></canvas></div>
+    <div class="ccard"><div class="cttl">Execution Time History</div><div class="csub">Last 10 queries (ms)</div><canvas id="lc" width="520" height="230"></canvas></div>
+  </div>
+
+  <div class="lp" id="lp">
+    <div class="lh"><div class="lt2">Query Execution Log</div><div class="live"><div class="dot"></div> LIVE</div></div>
+    <div class="lb" id="lb"></div>
+  </div>
+</main>
+</div>
+</div>
+
+<script>
+/* ============================================================
+   ANTI-GRAVITY PARTICLE SYSTEM
+============================================================ */
+(function(){
+  // Stars canvas
+  const canvas=document.getElementById('stars-canvas');
+  const ctx=canvas.getContext('2d');
+  let W,H,stars=[];
+  function resize(){W=canvas.width=window.innerWidth;H=canvas.height=window.innerHeight;createStars()}
+  function createStars(){
+    stars=[];
+    for(let i=0;i<180;i++){
+      stars.push({
+        x:Math.random()*W,y:Math.random()*H,
+        r:Math.random()*1.5+.2,
+        a:Math.random(),
+        da:.003+Math.random()*.007,
+        dx:(Math.random()-.5)*.15,
+        dy:-(Math.random()*.2+.05)
+      });
+    }
+  }
+  function drawStars(){
+    ctx.clearRect(0,0,W,H);
+    stars.forEach(s=>{
+      s.x+=s.dx;s.y+=s.dy;
+      s.a+=s.da;
+      if(s.a>1||s.a<0)s.da*=-1;
+      if(s.y<-5){s.y=H+5;s.x=Math.random()*W}
+      ctx.beginPath();ctx.arc(s.x,s.y,s.r,0,Math.PI*2);
+      ctx.fillStyle=`rgba(255,255,255,${s.a*.85})`;ctx.fill();
+    });
+    requestAnimationFrame(drawStars);
+  }
+  resize();window.addEventListener('resize',resize);drawStars();
+})();
+
+// Inject dynamic particles
+(function(){
+  const auth=document.getElementById('auth-layer');
+  const cols=['rgba(138,79,255,0.7)','rgba(88,86,214,0.8)','rgba(63,185,80,0.6)','rgba(255,255,255,0.5)','rgba(180,130,255,0.7)'];
+  for(let i=0;i<30;i++){
+    const p=document.createElement('div');p.className='particle';
+    const sz=Math.random()*5+2;
+    p.style.cssText=`
+      width:${sz}px;height:${sz}px;
+      left:${Math.random()*100}%;
+      bottom:${Math.random()*20}%;
+      background:${cols[Math.floor(Math.random()*cols.length)]};
+      animation-duration:${4+Math.random()*8}s;
+      animation-delay:-${Math.random()*10}s;
+      box-shadow:0 0 ${sz*2}px ${cols[Math.floor(Math.random()*cols.length)]};
+    `;
+    auth.appendChild(p);
+  }
+
+  // Floating rings
+  for(let i=0;i<6;i++){
+    const r=document.createElement('div');r.className='ring';
+    const sz=60+Math.random()*160;
+    r.style.cssText=`
+      width:${sz}px;height:${sz}px;
+      left:${Math.random()*100}%;top:${Math.random()*100}%;
+      animation-duration:${3+Math.random()*5}s;
+      animation-delay:-${Math.random()*5}s;
+    `;
+    auth.appendChild(r);
+  }
+
+  // Floating molecules (small cross shapes)
+  for(let i=0;i<12;i++){
+    const m=document.createElement('div');m.className='mol';
+    m.style.cssText=`
+      left:${Math.random()*100}%;top:${Math.random()*100}%;
+      width:2px;height:12px;
+      background:rgba(138,79,255,${Math.random()*.4+.1});
+      animation-duration:${5+Math.random()*8}s;
+      animation-delay:-${Math.random()*8}s;
+      border-radius:2px;
+    `;
+    auth.appendChild(m);
+  }
+})();
+
+/* ============================================================
+   AUTH LOGIC
+============================================================ */
+// Simple in-memory user store (replace with real DB calls)
+const userStore={};
+
+function showSignup(){
+  const lp=document.getElementById('login-page');
+  const sp=document.getElementById('signup-page');
+  lp.classList.add('page-hidden');
+  sp.classList.remove('page-hidden');
+  sp.classList.add('page-enter');
+  setTimeout(()=>sp.classList.remove('page-enter'),400);
+}
+function showLogin(){
+  const lp=document.getElementById('login-page');
+  const sp=document.getElementById('signup-page');
+  sp.classList.add('page-hidden');
+  lp.classList.remove('page-hidden');
+  lp.classList.add('page-enter');
+  setTimeout(()=>lp.classList.remove('page-enter'),400);
+}
+
+function doLogin(){
+  const u=document.getElementById('l-user').value.trim();
+  const p=document.getElementById('l-pass').value;
+  const err=document.getElementById('login-err');
+  if(!u||!p){err.textContent='Please fill in all fields';err.classList.add('show');return}
+  // Check store or default demo account
+  if((userStore[u]&&userStore[u]===p)||(u==='demo'&&p==='demo123')){
+    err.classList.remove('show');
+    enterDashboard(u);
+  } else {
+    err.textContent='Invalid username or password';err.classList.add('show');
+    document.querySelector('#login-page .auth-card').style.animation='shake .4s ease';
+    setTimeout(()=>document.querySelector('#login-page .auth-card').style.animation='',400);
+  }
+}
+
+function doSignup(){
+  const u=document.getElementById('s-user').value.trim();
+  const e=document.getElementById('s-email').value.trim();
+  const p=document.getElementById('s-pass').value;
+  const p2=document.getElementById('s-pass2').value;
+  const err=document.getElementById('signup-err');
+  if(!u||!e||!p||!p2){err.textContent='Please fill in all fields';err.classList.add('show');return}
+  if(p!==p2){err.textContent='Passwords do not match';err.classList.add('show');return}
+  if(p.length<6){err.textContent='Password must be at least 6 characters';err.classList.add('show');return}
+  if(userStore[u]){err.textContent='Username already taken';err.classList.add('show');return}
+  userStore[u]=p;
+  err.classList.remove('show');
+  enterDashboard(u);
+}
+
+function enterDashboard(username){
+  const authL=document.getElementById('auth-layer');
+  const dashL=document.getElementById('dashboard-layer');
+  // set user badge
+  document.getElementById('uav').textContent=username[0].toUpperCase();
+  document.getElementById('uname').textContent=username;
+  // animate out auth
+  authL.style.transition='opacity .7s ease,transform .7s ease';
+  authL.style.opacity='0';authL.style.transform='scale(1.04)';
+  setTimeout(()=>{
+    authL.style.display='none';
+    dashL.classList.add('active');
+    showToast('👋 Welcome, '+username+'!');
+  },650);
+}
+
+function doLogout(){
+  const authL=document.getElementById('auth-layer');
+  const dashL=document.getElementById('dashboard-layer');
+  dashL.classList.remove('active');
+  authL.style.display='';
+  authL.style.opacity='0';authL.style.transform='scale(1.04)';
+  requestAnimationFrame(()=>{
+    authL.style.transition='opacity .6s ease,transform .6s ease';
+    authL.style.opacity='1';authL.style.transform='none';
+  });
+  showLogin();
+}
+
+function showToast(msg){
+  const t=document.createElement('div');t.className='toast';
+  t.innerHTML='<span style="color:#3fb950;font-size:16px">✓</span>'+msg;
+  document.body.appendChild(t);
+  setTimeout(()=>t.remove(),3300);
+}
+
+// Enter on login/signup
+document.getElementById('l-pass').addEventListener('keydown',e=>{if(e.key==='Enter')doLogin()});
+document.getElementById('s-pass2').addEventListener('keydown',e=>{if(e.key==='Enter')doSignup()});
+
+// Shake animation
+const styleEl=document.createElement('style');
+styleEl.textContent='@keyframes shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-8px)}40%{transform:translateX(8px)}60%{transform:translateX(-5px)}80%{transform:translateX(5px)}}';
+document.head.appendChild(styleEl);
+
+/* ============================================================
+   DASHBOARD QUERY ENGINE
+============================================================ */
+const EMP=[
+  {id:"E091",name:"Noah Adams",dept:"Engineering",salary:88000,hired:"2023-08-14",status:"Active"},
+  {id:"E038",name:"Grace Patel",dept:"Sales",salary:62000,hired:"2023-02-14",status:"Active"},
+  {id:"E015",name:"David Lee",dept:"Sales",salary:65000,hired:"2022-11-01",status:"Active"},
+  {id:"E082",name:"Mia Turner",dept:"Marketing",salary:71000,hired:"2022-10-05",status:"Active"},
+  {id:"E074",name:"Liam Chen",dept:"Finance",salary:76000,hired:"2022-04-19",status:"Active"},
+  {id:"E067",name:"Olivia Brown",dept:"Operations",salary:69000,hired:"2021-09-28",status:"Active"},
+  {id:"E004",name:"Bob Martinez",dept:"Sales",salary:64000,hired:"2021-07-08",status:"Inactive"},
+  {id:"E012",name:"Alice Johnson",dept:"Engineering",salary:87000,hired:"2019-03-11",status:"Active"},
+  {id:"E033",name:"Carol White",dept:"Engineering",salary:91200,hired:"2018-07-22",status:"Active"},
+  {id:"E055",name:"Grace Kim",dept:"Engineering",salary:94500,hired:"2016-01-15",status:"Active"},
+  {id:"E021",name:"Frank Brown",dept:"HR",salary:55000,hired:"2017-05-30",status:"Active"},
+  {id:"E044",name:"Maria Garcia",dept:"Marketing",salary:75000,hired:"2018-11-12",status:"Active"},
+  {id:"E009",name:"Henry Park",dept:"Marketing",salary:68000,hired:"2021-03-04",status:"Inactive"},
+  {id:"E077",name:"Karen Taylor",dept:"Engineering",salary:89000,hired:"2020-06-18",status:"Active"},
+  {id:"E022",name:"James Wilson",dept:"HR",salary:52000,hired:"2023-01-09",status:"Active"},
+];
+
+const CFGS={
+  "hired after 2020":{
+    filter:()=>EMP.filter(e=>parseInt(e.hired)>2020).sort((a,b)=>b.hired.localeCompare(a.hired)),
+    code:`db.employees.find(\n  {\n    hire_date: {\n      <span class="op">$gt</span>: <span class="str">ISODate("2020-12-31T00:00:00Z")</span>\n    }\n  },\n  { <span class="cm">_id</span>: 0, employee_id: 1, name: 1, department: 1, hire_date: 1 }\n).sort({ hire_date: <span class="op">-1</span> })`,
+    csum:"db.employees.find({ hire_date: { $gt: ... } })",op:"find()",conf:95,time:"14ms",idx:"IXSCAN",
+    q:"Who joined the company after 2020?",
+    qs:"You asked for all employees hired after December 31, 2020 — people who have been here for 3 years or less.",
+    steps:[
+      {h:"Opened your employee records",d:"We accessed the employees folder, which has "+EMP.length+" people stored inside."},
+      {h:"Set a date filter",d:'We told the system: "only show me people whose join date is later than December 31, 2020."'},
+      {h:"Used an index to search fast",d:"Instead of checking every record one by one, the system used a pre-built index."},
+      {h:"Sorted newest first",d:"We arranged results so the most recently hired person appears at the top."},
+    ],
+    found:r=>`<span class="hl">${r.length} employees</span> joined after 2020. The newest hire is <span class="hl">${r[0].name}</span> (${r[0].dept}), who joined on <span class="hl">${r[0].hired}</span>.`,
+    insights:r=>[
+      {i:"🆕",t:`${r.length} of ${EMP.length} employees (${Math.round(r.length/EMP.length*100)}%) joined in the last 3 years.`},
+      {i:"🏢",t:`Sales has the most newer employees with ${r.filter(e=>e.dept==="Sales").length} recent hires.`},
+      {i:"📅",t:`The most recent hire joined on ${r[0].hired}.`},
+    ],
+    next:["Who has been here the longest?","Count by department","Top 5 highest paid","Average salary per dept"],
+  },
+  "count by department":{
+    filter:()=>{const m={};EMP.forEach(e=>{m[e.dept]=(m[e.dept]||0)+1});return Object.entries(m).map(([d,c])=>({department:d,headcount:c})).sort((a,b)=>b.headcount-a.headcount)},
+    code:`db.employees.aggregate([\n  { <span class="op">$group</span>: {\n      _id: <span class="str">"$department"</span>,\n      headcount: { <span class="op">$sum</span>: 1 }\n    }\n  },\n  { <span class="op">$sort</span>: { headcount: <span class="op">-1</span> } }\n])`,
+    csum:"db.employees.aggregate([{ $group }, { $sort }])",op:"aggregate()",conf:98,time:"8ms",idx:"COLLSCAN",
+    q:"How many employees are in each department?",
+    qs:"You wanted a headcount per team — how many people work in each department.",
+    steps:[
+      {h:"Gathered all employee records",d:`We looked at every one of the ${EMP.length} employee profiles.`},
+      {h:"Grouped everyone by their team",d:"We sorted each employee into their department group."},
+      {h:"Counted each group",d:"We counted how many people ended up in each group."},
+      {h:"Sorted largest to smallest",d:"We arranged results from biggest team to smallest."},
+    ],
+    found:r=>`Found <span class="hl">${r.length} departments</span>. Biggest: <span class="hl">${r[0].department}</span> (${r[0].headcount} people). Smallest: <span class="hl">${r[r.length-1].department}</span> (${r[r.length-1].headcount}).`,
+    insights:r=>[
+      {i:"🏆",t:`${r[0].department} is the largest team with ${r[0].headcount} people.`},
+      {i:"📉",t:`${r[r.length-1].department} is the smallest with ${r[r.length-1].headcount}.`},
+      {i:"⚖️",t:`Average team size is about ${Math.round(EMP.length/r.length)} employees.`},
+    ],
+    next:["Average salary per dept","Top 5 highest paid","Find all employees in Sales","Hired after 2020"],
+  },
+  "find all employees in sales":{
+    filter:()=>EMP.filter(e=>e.dept==="Sales"),
+    code:`db.employees.find(\n  { department: <span class="str">"Sales"</span> },\n  { _id: 0, employee_id: 1, name: 1, salary: 1, hire_date: 1, status: 1 }\n)`,
+    csum:'db.employees.find({ department: "Sales" })',op:"find()",conf:99,time:"6ms",idx:"IXSCAN",
+    q:"Show me everyone in the Sales team",
+    qs:"You wanted a complete list of all employees in Sales.",
+    steps:[
+      {h:"Scanned all employee records",d:`We looked through all ${EMP.length} employee profiles.`},
+      {h:"Applied the department filter",d:'We kept only those whose department says "Sales".'},
+      {h:"Collected the matching records",d:"We gathered all the Sales employees into one clean list."},
+      {h:"Delivered the results",d:"We presented the full list with each person's details."},
+    ],
+    found:r=>`<span class="hl">${r.length} people</span> work in Sales. <span class="hl">${r.filter(e=>e.status==="Active").length} are active</span>. Salaries range from $${Math.min(...r.map(e=>e.salary)).toLocaleString()} to $${Math.max(...r.map(e=>e.salary)).toLocaleString()}.`,
+    insights:r=>[
+      {i:"👥",t:`Sales has ${r.length} members — ${Math.round(r.length/EMP.length*100)}% of the workforce.`},
+      {i:"✅",t:`${r.filter(e=>e.status==="Active").length} of ${r.length} are active.`},
+      {i:"💰",t:`Top earner in Sales: $${Math.max(...r.map(e=>e.salary)).toLocaleString()}/yr.`},
+    ],
+    next:["Count by department","Average salary per dept","Top 5 highest paid","Hired after 2020"],
+  },
+  "top 5 highest paid":{
+    filter:()=>[...EMP].sort((a,b)=>b.salary-a.salary).slice(0,5),
+    code:`db.employees.find(\n  {},\n  { _id: 0, name: 1, department: 1, salary: 1 }\n).sort({ salary: <span class="op">-1</span> }).limit(<span class="op">5</span>)`,
+    csum:"db.employees.find({}).sort({ salary: -1 }).limit(5)",op:"find()",conf:97,time:"11ms",idx:"IXSCAN",
+    q:"Who are the 5 highest-paid employees?",
+    qs:"You wanted the top 5 earners across the whole company.",
+    steps:[
+      {h:"Collected every employee's salary",d:`Checked all ${EMP.length} employee salaries.`},
+      {h:"Ranked by pay, highest first",d:"Sorted all employees from highest to lowest salary."},
+      {h:"Picked the top 5",d:"Took only the first 5 from that ranked list."},
+      {h:"Packaged and returned",d:"Presented those 5 with their exact salaries and departments."},
+    ],
+    found:r=>`Top earner is <span class="hl">${r[0].name}</span> from <span class="hl">${r[0].dept}</span>, making <span class="hl">$${r[0].salary.toLocaleString()}/year</span>.`,
+    insights:r=>[
+      {i:"🥇",t:`${r[0].name} earns $${r[0].salary.toLocaleString()}/year.`},
+      {i:"🏢",t:`${r.filter(e=>e.dept==="Engineering").length} of top 5 are in Engineering.`},
+      {i:"📈",t:`Lowest among top 5: $${Math.min(...r.map(e=>e.salary)).toLocaleString()}/year.`},
+    ],
+    next:["Average salary per dept","Count by department","Find all employees in Sales","Hired after 2020"],
+  },
+  "average salary per dept":{
+    filter:()=>{const m={},c={};EMP.forEach(e=>{m[e.dept]=(m[e.dept]||0)+e.salary;c[e.dept]=(c[e.dept]||0)+1});return Object.entries(m).map(([d,s])=>({department:d,avg_salary:Math.round(s/c[d]),headcount:c[d]})).sort((a,b)=>b.avg_salary-a.avg_salary)},
+    code:`db.employees.aggregate([\n  { <span class="op">$group</span>: {\n      _id: <span class="str">"$department"</span>,\n      avg_salary: { <span class="op">$avg</span>: <span class="str">"$salary"</span> },\n      headcount: { <span class="op">$sum</span>: 1 }\n    }\n  },\n  { <span class="op">$sort</span>: { avg_salary: <span class="op">-1</span> } }\n])`,
+    csum:"db.employees.aggregate([{ $group: { avg_salary: $avg } }])",op:"aggregate()",conf:96,time:"10ms",idx:"COLLSCAN",
+    q:"What does each department earn on average?",
+    qs:"You wanted to compare pay across teams.",
+    steps:[
+      {h:"Gathered all salary records",d:`Looked at salary for every one of the ${EMP.length} employees.`},
+      {h:"Sorted into department groups",d:"Placed each person into their team."},
+      {h:"Calculated the average",d:"Added salaries per department and divided by headcount."},
+      {h:"Ranked highest to lowest",d:"Sorted departments so the best-paying appears first."},
+    ],
+    found:r=>`<span class="hl">${r[0].department}</span> pays most at <span class="hl">$${r[0].avg_salary.toLocaleString()}/yr</span>. <span class="hl">${r[r.length-1].department}</span> is lowest at <span class="hl">$${r[r.length-1].avg_salary.toLocaleString()}/yr</span>.`,
+    insights:r=>[
+      {i:"💰",t:`${r[0].department} is the best-paying team.`},
+      {i:"📊",t:`Company-wide average: $${Math.round(EMP.reduce((s,e)=>s+e.salary,0)/EMP.length).toLocaleString()}/yr.`},
+      {i:"💸",t:`Pay gap between highest and lowest dept: $${(r[0].avg_salary-r[r.length-1].avg_salary).toLocaleString()}.`},
+    ],
+    next:["Top 5 highest paid","Count by department","Find all employees in Sales","Hired after 2020"],
+  },
+};
+
+function getCfg(raw){const k=raw.toLowerCase().trim();return CFGS[Object.keys(CFGS).find(c=>k.includes(c)||c.includes(k.slice(0,12)))||"hired after 2020"]}
+
+let lastRes=[],execTimes=[22,15,30,17,40,12,25,19,34,18],mc={find:0,agg:0,ins:0,upd:0};
+const delay=ms=>new Promise(r=>setTimeout(r,ms));
+
+function rPipe(){["p1","p2","p3","p4","p5","p6"].forEach((id,i)=>{const el=document.getElementById(id);el.className="pi pend";el.textContent="○";document.getElementById("l"+(i+1)).className="pl"})}
+async function animPipe(){
+  document.getElementById("pipe").classList.add("on");rPipe();
+  for(let i=1;i<=6;i++){const el=document.getElementById("p"+i);el.className="pi run";el.textContent="⟳";await delay(200);el.className="pi done";el.textContent="✓";document.getElementById("l"+i).className="pl done";await delay(80);}
+}
+
+function log(type,msg){
+  const body=document.getElementById("lb");document.getElementById("lp").classList.add("on");
+  const t=new Date().toTimeString().slice(0,8);const d=document.createElement("div");d.className="ll";
+  d.innerHTML=`<span class="ltm">${t}</span><span class="l${type}">[${type==="i"?"INFO":type==="s"?"SUCCESS":"WARN"}]</span><span class="lm">${msg}</span>`;
+  body.appendChild(d);body.scrollTop=body.scrollHeight;
+}
+
+function drawDonut(){
+  const c=document.getElementById("dc"),ctx=c.getContext("2d");
+  const vals=[mc.find,mc.agg,mc.ins,mc.upd],total=vals.reduce((a,b)=>a+b,0)||1;
+  const cols=["#3fb950","#58a6ff","#e3b341","#bc8cff"],labels=["find()","aggregate()","insert()","update()"];
+  ctx.clearRect(0,0,c.width,c.height);
+  let a=-Math.PI/2;const cx=110,cy=115,r=85,ri=52;
+  vals.forEach((v,i)=>{const s=(v/total)*Math.PI*2||0.05;ctx.beginPath();ctx.moveTo(cx,cy);ctx.arc(cx,cy,r,a,a+s);ctx.closePath();ctx.fillStyle=cols[i];ctx.fill();a+=s});
+  ctx.beginPath();ctx.arc(cx,cy,ri,0,Math.PI*2);ctx.fillStyle="#161b22";ctx.fill();
+  labels.forEach((l,i)=>{const lx=230,ly=55+i*32;ctx.fillStyle=cols[i];ctx.fillRect(lx,ly,12,12);ctx.fillStyle="#7d8590";ctx.font="12px DM Sans";ctx.fillText(l,lx+18,ly+11)});
+}
+function drawLine(){
+  const c=document.getElementById("lc"),ctx=c.getContext("2d");
+  const W=c.width,H=c.height,pad=40,mn=8,mx=48;
+  ctx.clearRect(0,0,W,H);
+  const pts=execTimes.map((v,i)=>({x:pad+(i/(execTimes.length-1))*(W-pad*2),y:H-pad-((v-mn)/(mx-mn))*(H-pad*2)}));
+  [10,20,30,40].forEach(v=>{const y=H-pad-((v-mn)/(mx-mn))*(H-pad*2);ctx.strokeStyle="#21262d";ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(pad,y);ctx.lineTo(W-pad,y);ctx.stroke();ctx.fillStyle="#484f58";ctx.font="10px JetBrains Mono";ctx.fillText(v+"ms",2,y+4)});
+  execTimes.forEach((_,i)=>{const x=pad+(i/(execTimes.length-1))*(W-pad*2);ctx.fillStyle="#484f58";ctx.font="10px JetBrains Mono";ctx.fillText("Q"+(i+1),x-7,H-6)});
+  ctx.beginPath();ctx.moveTo(pts[0].x,H-pad);pts.forEach(p=>ctx.lineTo(p.x,p.y));ctx.lineTo(pts[pts.length-1].x,H-pad);ctx.closePath();ctx.fillStyle="rgba(63,185,80,0.08)";ctx.fill();
+  ctx.beginPath();pts.forEach((p,i)=>i?ctx.lineTo(p.x,p.y):ctx.moveTo(p.x,p.y));ctx.strokeStyle="#3fb950";ctx.lineWidth=2;ctx.stroke();
+  pts.forEach(p=>{ctx.beginPath();ctx.arc(p.x,p.y,4,0,Math.PI*2);ctx.fillStyle="#3fb950";ctx.fill();ctx.strokeStyle="#161b22";ctx.lineWidth=2;ctx.stroke()});
+}
+
+function renderTable(data){
+  if(!data.length)return;const keys=Object.keys(data[0]);
+  document.getElementById("th").innerHTML="<tr>"+keys.map(k=>`<th>${k.replace(/_/g," ").toUpperCase()}</th>`).join("")+"</tr>";
+  document.getElementById("tb").innerHTML=data.map(row=>"<tr>"+keys.map(k=>{const v=row[k];
+    if(k==="dept"||k==="department")return`<td><span class="tdept">${v}</span></td>`;
+    if(k==="status")return`<td><span class="${v==="Active"?"tact":"tina"}">${v==="Active"?"● Active":"○ Inactive"}</span></td>`;
+    if(k==="salary"||k==="avg_salary")return`<td style="color:var(--blue)">$${v.toLocaleString()}</td>`;
+    return`<td>${v}</td>`}).join("")+"</tr>").join("");
+}
+
+function st2(tab,el){
+  document.querySelectorAll(".tab").forEach(t=>t.classList.remove("act"));el.classList.add("act");
+  document.getElementById("tt").style.display=tab==="t"?"block":"none";
+  document.getElementById("tj").style.display=tab==="j"?"block":"none";
+}
+
+function renderExpl(cfg,r){
+  const sh=cfg.steps.map(s=>`<div class="estep"><div class="enum">✓</div><div class="ebody"><div class="ehead">${s.h}</div><div class="edesc">${s.d}</div></div></div>`).join("");
+  const ih=cfg.insights(r).map(i=>`<div class="ins"><span style="flex-shrink:0;font-size:14px">${i.i}</span><span>${i.t}</span></div>`).join("");
+  const nh=cfg.next.map(q=>`<button class="nbtn" onclick="sq('${q}');runQuery()">→ ${q}</button>`).join("");
+  document.getElementById("eg").innerHTML=`
+    <div class="ehero"><div class="ehero-lbl">🙋 What You Asked</div><div class="ehero-q">${cfg.q}</div><div class="ehero-sub">${cfg.qs}</div></div>
+    <div class="esteps"><div class="esteps-ttl">⚙️ How We Found Your Answer</div>${sh}</div>
+    <div class="efound"><div class="efound-ttl">📋 What We Found</div><div class="efound-txt">${cfg.found(r)}</div><div style="margin-top:14px">${ih}</div></div>
+    <div class="enext"><div class="enext-ttl">💬 What To Ask Next</div><div class="ngrid">${nh}</div></div>
+  `;
+  document.getElementById("expl").classList.add("on");
+}
+
+async function runQuery(){
+  const raw=document.getElementById("qi").value.trim();if(!raw)return;
+  const cfg=getCfg(raw);
+  ["cb","sc","expl","rs","cg","lp"].forEach(id=>{document.getElementById(id).classList.remove("on")});
+  document.getElementById("lb").innerHTML="";
+  const btn=document.getElementById("rb");btn.classList.add("ld");btn.innerHTML="⏳ Running…";
+  log("i",`Query: "${raw}"`);log("i","Collection: employees");log("i","Operation: "+cfg.op);
+  await animPipe();await delay(180);
+  document.getElementById("cop").textContent=cfg.op;document.getElementById("csum").textContent=cfg.csum;
+  document.getElementById("cd").innerHTML=cfg.code;document.getElementById("cb").classList.add("on");
+  log("s","Query generated (confidence: "+cfg.conf+"%)");await delay(280);
+  log("i","Index scan: "+cfg.idx);await delay(380);
+  const res=cfg.filter();lastRes=res;
+  execTimes.push(parseInt(cfg.time));if(execTimes.length>10)execTimes.shift();
+  if(cfg.op.startsWith("find"))mc.find++;else mc.agg++;
+  log("s",`Executed in ${cfg.time} — ${res.length} documents returned`);
+  document.getElementById("sd").textContent=res.length;document.getElementById("sf").textContent=cfg.conf+"%";
+  document.getElementById("st").textContent=cfg.time;document.getElementById("si").textContent=cfg.idx;
+  document.getElementById("sc").classList.add("on");
+  renderExpl(cfg,res);
+  document.getElementById("rc").textContent=res.length+" documents";
+  renderTable(res);document.getElementById("jp").textContent=JSON.stringify(res,null,2);
+  document.getElementById("rs").classList.add("on");
+  document.getElementById("tt").style.display="block";document.getElementById("tj").style.display="none";
+  document.querySelectorAll(".tab").forEach((t,i)=>t.classList.toggle("act",i===0));
+  document.getElementById("cg").classList.add("on");
+  setTimeout(()=>{drawDonut();drawLine()},80);
+  btn.classList.remove("ld");btn.innerHTML="⚡ Generate + Run";
+  document.getElementById("ms").scrollTop=180;
+}
+
+function sq(q){document.getElementById("qi").value=q}
+function clearQ(){document.getElementById("qi").value=""}
+function copyCode(){navigator.clipboard.writeText(document.getElementById("cd").innerText).catch(()=>{})}
+function exportJ(){if(!lastRes.length)return;const b=new Blob([JSON.stringify(lastRes,null,2)],{type:"application/json"});const a=document.createElement("a");a.href=URL.createObjectURL(b);a.download="results.json";a.click()}
+document.getElementById("qi").addEventListener("keydown",e=>{if(e.key==="Enter")runQuery()});
+</script>
+</body>
+</html>
