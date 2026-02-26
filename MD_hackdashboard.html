@@ -376,6 +376,16 @@ td{padding:6px 10px;font-size:10px;color:var(--text);font-family:'JetBrains Mono
       <div class="hbadge hbadge-ai">✦ AI Engine</div>
       <div class="hbadge hbadge-v">v8.0</div>
       <div class="conn-pill"><div class="conn-dot"></div>CONNECTED</div>
+      <button onclick="logoutUser()" 
+    style="background:transparent;
+           border:1px solid var(--border);
+           color:var(--text);
+           padding:6px 12px;
+           border-radius:6px;
+           cursor:pointer;
+           font-size:11px;">
+    Logout
+  </button>
     </div>
   </header>
 
@@ -1162,6 +1172,18 @@ function updateLiveExplain(){
       </div>
     </div>`;
 })();
+  // Protect dashboard
+if (localStorage.getItem("isLoggedIn") !== "true") {
+    window.location.href = "login-signup.html";
+}
+// Optional: show username in console
+const username = localStorage.getItem("userUsername");
+console.log("Logged in as:", username);
+// Logout function (connect to logout button)
+function logoutUser() {
+    localStorage.removeItem("isLoggedIn");
+    window.location.href = "login-signup.html";
+}
 </script>
 </body>
 </html>
