@@ -8,537 +8,201 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <style>
   :root {
-    --bg:       #0d1117;
-    --surface:  #161b22;
-    --card:     #1c2330;
-    --border:   #30363d;
-    --mg-green: #00ed64;
-    --mg-dark:  #00684a;
-    --mg-light: #00ff85;
-    --amber:    #f59e0b;
-    --red:      #ef4444;
-    --blue:     #3b82f6;
-    --text:     #e6edf3;
-    --muted:    #7d8590;
-    --glow:     0 0 28px rgba(0,237,100,0.18);
-    --glow-sm:  0 0 12px rgba(0,237,100,0.12);
+    --bg:#0d1117; --surface:#161b22; --card:#1c2330; --border:#30363d;
+    --mg-green:#00ed64; --mg-dark:#00684a; --amber:#f59e0b;
+    --red:#ef4444; --blue:#3b82f6; --text:#e6edf3; --muted:#7d8590;
+    --glow:0 0 28px rgba(0,237,100,0.18); --glow-sm:0 0 12px rgba(0,237,100,0.12);
   }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{background:var(--bg);color:var(--text);font-family:'Outfit',sans-serif;min-height:100vh;overflow-x:hidden;}
+  body::before{content:'';position:fixed;inset:0;background-image:radial-gradient(rgba(0,237,100,0.06) 1px,transparent 1px);background-size:28px 28px;pointer-events:none;z-index:0;}
+  body::after{content:'';position:fixed;bottom:-150px;left:-150px;width:500px;height:500px;background:radial-gradient(circle,rgba(0,237,100,0.07) 0%,transparent 70%);pointer-events:none;z-index:0;}
+  .app{position:relative;z-index:1;display:flex;flex-direction:column;height:100vh;}
 
-  * { margin:0; padding:0; box-sizing:border-box; }
+  header{display:flex;align-items:center;justify-content:space-between;padding:0 32px;height:60px;border-bottom:1px solid var(--border);background:rgba(13,17,23,0.92);backdrop-filter:blur(16px);position:sticky;top:0;z-index:200;flex-shrink:0;}
+  .logo{display:flex;align-items:center;gap:10px;}
+  .logo-leaf{width:32px;height:32px;background:linear-gradient(135deg,var(--mg-green),var(--mg-dark));border-radius:50% 8px 50% 8px;display:flex;align-items:center;justify-content:center;font-size:16px;box-shadow:var(--glow-sm);}
+  .logo-text{font-size:17px;font-weight:700;letter-spacing:-0.3px;}
+  .logo-text .mongo{color:var(--mg-green);}
+  .header-mid{display:flex;align-items:center;gap:6px;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:5px 14px;font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--muted);}
+  .header-mid .collection-name{color:var(--mg-green);font-weight:500;}
+  .header-right{display:flex;align-items:center;gap:16px;}
+  .conn-badge{display:flex;align-items:center;gap:6px;font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--muted);}
+  .conn-dot{width:7px;height:7px;background:var(--mg-green);border-radius:50%;animation:pulse 2.5s infinite;box-shadow:0 0 6px var(--mg-green);}
+  @keyframes pulse{0%,100%{opacity:1;}50%{opacity:0.5;}}
+  .version-tag{background:rgba(0,237,100,0.1);border:1px solid rgba(0,237,100,0.25);color:var(--mg-green);font-size:10px;font-weight:700;font-family:'JetBrains Mono',monospace;padding:3px 8px;border-radius:5px;letter-spacing:0.5px;}
+  .ai-badge{background:rgba(150,208,255,0.1);border:1px solid rgba(150,208,255,0.25);color:#96d0ff;font-size:10px;font-weight:700;font-family:'JetBrains Mono',monospace;padding:3px 8px;border-radius:5px;}
 
-  body {
-    background: var(--bg);
-    color: var(--text);
-    font-family: 'Outfit', sans-serif;
-    min-height: 100vh;
-    overflow-x: hidden;
-  }
+  .workspace{display:grid;grid-template-columns:260px 1fr;flex:1;overflow:hidden;}
 
-  /* Subtle dot grid */
-  body::before {
-    content:'';
-    position:fixed; inset:0;
-    background-image: radial-gradient(rgba(0,237,100,0.06) 1px, transparent 1px);
-    background-size: 28px 28px;
-    pointer-events:none; z-index:0;
-  }
+  .sidebar{border-right:1px solid var(--border);background:rgba(22,27,34,0.7);display:flex;flex-direction:column;overflow-y:auto;padding:20px 0 24px;}
+  .sb-section{padding:0 16px;margin-bottom:6px;}
+  .sb-label{font-size:9px;font-weight:700;letter-spacing:2px;color:var(--muted);text-transform:uppercase;margin-bottom:8px;padding:0 4px;}
+  .nav-item{display:flex;align-items:center;gap:9px;padding:9px 10px;border-radius:7px;cursor:pointer;font-size:13px;font-weight:600;color:var(--muted);transition:all 0.18s;margin-bottom:2px;}
+  .nav-item:hover{background:var(--border);color:var(--text);}
+  .nav-item.active{background:rgba(0,237,100,0.1);color:var(--mg-green);}
+  .nav-item .ni{font-size:14px;}
+  .nav-item .nav-count{margin-left:auto;background:var(--border);color:var(--muted);font-family:'JetBrains Mono',monospace;font-size:10px;padding:1px 6px;border-radius:10px;}
+  .sb-divider{border:none;border-top:1px solid var(--border);margin:14px 16px;}
+  .collection-item{display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:7px;cursor:pointer;font-size:12px;font-weight:600;color:var(--muted);transition:all 0.18s;font-family:'JetBrains Mono',monospace;margin-bottom:2px;}
+  .collection-item:hover{background:var(--border);color:var(--text);}
+  .collection-item.active-coll{background:rgba(0,237,100,0.08);color:var(--mg-green);border-left:2px solid var(--mg-green);padding-left:8px;}
+  .coll-icon{font-size:13px;}
+  .coll-count{margin-left:auto;font-size:10px;color:var(--muted);}
+  .op-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px;}
+  .op-btn{padding:8px 6px;border-radius:7px;background:var(--card);border:1px solid var(--border);color:var(--muted);font-size:11px;font-weight:700;cursor:pointer;transition:all 0.18s;font-family:'JetBrains Mono',monospace;text-align:center;letter-spacing:0.3px;}
+  .op-btn:hover{border-color:var(--mg-green);color:var(--mg-green);}
+  .op-btn.active-op{background:rgba(0,237,100,0.1);border-color:var(--mg-green);color:var(--mg-green);}
 
-  /* Green glow blob bottom-left */
-  body::after {
-    content:'';
-    position:fixed;
-    bottom:-150px; left:-150px;
-    width:500px; height:500px;
-    background: radial-gradient(circle, rgba(0,237,100,0.07) 0%, transparent 70%);
-    pointer-events:none; z-index:0;
-  }
+  .upload-zone{position:relative;border:2px dashed var(--border);border-radius:10px;padding:16px 12px;text-align:center;cursor:pointer;transition:all 0.25s;background:rgba(0,0,0,0.15);}
+  .upload-zone:hover,.upload-zone.drag-over{border-color:var(--mg-green);background:rgba(0,237,100,0.03);box-shadow:var(--glow-sm);}
+  .upload-zone input[type="file"]{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%;}
+  .upload-icon-big{font-size:22px;margin-bottom:5px;display:block;transition:transform 0.25s;}
+  .upload-zone:hover .upload-icon-big{transform:translateY(-2px);}
+  .upload-main-text{font-size:11px;font-weight:700;color:var(--text);margin-bottom:2px;}
+  .upload-sub-text{font-size:10px;color:var(--muted);font-family:'JetBrains Mono',monospace;}
+  .fmt-row{display:flex;gap:4px;justify-content:center;margin-top:8px;flex-wrap:wrap;}
+  .fmt-tag{background:var(--border);color:var(--muted);border-radius:4px;padding:2px 5px;font-size:9px;font-weight:700;font-family:'JetBrains Mono',monospace;letter-spacing:0.5px;}
+  .upload-progress{display:none;margin-top:8px;}
+  .prog-bg{background:var(--border);border-radius:3px;height:3px;overflow:hidden;}
+  .prog-fill{height:100%;background:linear-gradient(90deg,var(--mg-green),var(--mg-dark));border-radius:3px;width:0%;transition:width 0.25s;}
+  .prog-label{font-size:9px;color:var(--muted);font-family:'JetBrains Mono',monospace;margin-top:3px;text-align:center;}
+  .file-loaded{display:none;background:rgba(0,237,100,0.05);border:1px solid rgba(0,237,100,0.2);border-radius:9px;padding:10px;margin-top:8px;animation:fadeUp 0.3s ease;}
+  .fl-row{display:flex;align-items:center;gap:7px;}
+  .fl-info{flex:1;min-width:0;}
+  .fl-name{font-size:11px;font-weight:700;color:var(--mg-green);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-family:'JetBrains Mono',monospace;}
+  .fl-meta{font-size:9px;color:var(--muted);font-family:'JetBrains Mono',monospace;margin-top:2px;}
+  .fl-remove{background:none;border:1px solid var(--border);color:var(--muted);border-radius:5px;padding:2px 6px;font-size:10px;cursor:pointer;transition:all 0.18s;flex-shrink:0;}
+  .fl-remove:hover{border-color:var(--red);color:var(--red);}
+  .fl-preview-btn{margin-top:6px;background:none;border:1px solid var(--border);color:var(--muted);border-radius:6px;padding:3px 8px;font-size:9px;cursor:pointer;transition:all 0.18s;font-family:'JetBrains Mono',monospace;width:100%;letter-spacing:0.5px;font-weight:700;}
+  .fl-preview-btn:hover{border-color:var(--mg-green);color:var(--mg-green);}
+  .fl-preview-data{display:none;margin-top:7px;max-height:110px;overflow-y:auto;font-family:'JetBrains Mono',monospace;font-size:9px;border-top:1px solid var(--border);padding-top:6px;}
+  .fl-preview-data table{width:100%;border-collapse:collapse;}
+  .fl-preview-data th{color:var(--mg-green);text-align:left;padding:1px 5px;border-bottom:1px solid var(--border);white-space:nowrap;font-size:9px;}
+  .fl-preview-data td{padding:1px 5px;color:var(--muted);font-size:9px;border:none;white-space:nowrap;}
 
-  .app { position:relative; z-index:1; display:flex; flex-direction:column; height:100vh; }
+  .right-panel{display:flex;flex-direction:column;overflow:hidden;}
+  .query-area{padding:20px 28px 16px;border-bottom:1px solid var(--border);background:rgba(22,27,34,0.5);flex-shrink:0;}
+  .qa-top{display:flex;align-items:center;gap:12px;margin-bottom:12px;}
+  .qa-label{font-size:9px;font-weight:700;letter-spacing:2px;color:var(--muted);text-transform:uppercase;}
+  .active-coll-pill{display:flex;align-items:center;gap:5px;background:var(--card);border:1px solid var(--border);border-radius:6px;padding:3px 10px;font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--mg-green);}
+  .query-box-wrap{position:relative;}
+  .query-box{width:100%;background:var(--card);border:1px solid var(--border);border-radius:10px;padding:14px 160px 14px 18px;color:var(--text);font-family:'Outfit',sans-serif;font-size:14px;font-weight:400;outline:none;transition:all 0.25s;height:52px;line-height:24px;}
+  .query-box:focus{border-color:var(--mg-green);box-shadow:var(--glow);background:rgba(28,35,48,0.95);}
+  .query-box::placeholder{color:var(--muted);}
+  .qb-actions{position:absolute;right:8px;top:50%;transform:translateY(-50%);display:flex;gap:6px;align-items:center;}
+  .btn-generate{background:linear-gradient(135deg,var(--mg-green),var(--mg-dark));color:#0d1117;border:none;border-radius:7px;padding:8px 16px;font-family:'Outfit',sans-serif;font-size:12px;font-weight:700;cursor:pointer;transition:all 0.2s;letter-spacing:0.3px;white-space:nowrap;}
+  .btn-generate:hover{transform:scale(1.03);box-shadow:var(--glow);}
+  .btn-generate:active{transform:scale(0.97);}
+  .btn-clr{background:var(--border);color:var(--muted);border:none;border-radius:7px;padding:8px 11px;font-size:12px;cursor:pointer;transition:all 0.18s;}
+  .btn-clr:hover{background:var(--card);color:var(--text);}
+  .example-chips{display:flex;gap:7px;margin-top:11px;flex-wrap:wrap;}
+  .chip{background:var(--card);border:1px solid var(--border);border-radius:20px;padding:4px 12px;font-size:11px;color:var(--muted);cursor:pointer;transition:all 0.18s;font-weight:600;}
+  .chip:hover{border-color:var(--mg-green);color:var(--mg-green);background:rgba(0,237,100,0.05);}
+  .ds-banner{display:none;align-items:center;gap:8px;padding:7px 12px;margin-top:10px;background:rgba(0,237,100,0.05);border:1px solid rgba(0,237,100,0.2);border-radius:7px;font-family:'JetBrains Mono',monospace;font-size:11px;animation:fadeUp 0.3s ease;}
+  .ds-banner .ds-label{color:var(--muted);font-size:10px;}
+  .ds-banner .ds-val{color:var(--mg-green);font-weight:700;flex:1;}
+  .ds-banner .ds-rows{color:var(--muted);font-size:10px;}
+  @keyframes fadeUp{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:translateY(0);}}
 
-  /* ── HEADER ── */
-  header {
-    display:flex; align-items:center; justify-content:space-between;
-    padding:0 32px;
-    height:60px;
-    border-bottom:1px solid var(--border);
-    background:rgba(13,17,23,0.92);
-    backdrop-filter:blur(16px);
-    position:sticky; top:0; z-index:200;
-    flex-shrink:0;
-  }
+  .content{flex:1;overflow-y:auto;padding:22px 28px 28px;}
+  .empty-state{text-align:center;padding:70px 20px;color:var(--muted);}
+  .es-icon{font-size:52px;margin-bottom:16px;display:block;}
+  .es-title{font-size:18px;font-weight:700;color:var(--text);margin-bottom:8px;}
+  .es-sub{font-size:13px;line-height:1.7;}
+  .loading{display:none;align-items:center;gap:12px;padding:20px 0;font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--muted);}
+  .spinner{width:16px;height:16px;border:2px solid var(--border);border-top-color:var(--mg-green);border-radius:50%;animation:spin 0.65s linear infinite;}
+  @keyframes spin{to{transform:rotate(360deg);}}
+  @keyframes slideUp{from{opacity:0;transform:translateY(12px);}to{opacity:1;transform:translateY(0);}}
 
-  .logo { display:flex; align-items:center; gap:10px; }
-  .logo-leaf {
-    width:32px; height:32px;
-    background:linear-gradient(135deg, var(--mg-green), var(--mg-dark));
-    border-radius:50% 8px 50% 8px;
-    display:flex; align-items:center; justify-content:center;
-    font-size:16px;
-    box-shadow: var(--glow-sm);
-  }
-  .logo-text { font-size:17px; font-weight:700; letter-spacing:-0.3px; }
-  .logo-text .mongo { color:var(--mg-green); }
+  .pipeline-steps{display:flex;gap:0;margin-bottom:18px;border-radius:8px;overflow:hidden;border:1px solid var(--border);}
+  .ps{flex:1;padding:10px 8px;text-align:center;font-size:10px;font-weight:700;letter-spacing:0.3px;color:var(--muted);background:var(--card);border-right:1px solid var(--border);transition:all 0.3s;}
+  .ps:last-child{border-right:none;}
+  .ps.done{color:var(--mg-green);background:rgba(0,237,100,0.06);}
+  .ps.active{color:var(--text);background:rgba(0,237,100,0.12);}
+  .ps-icon{display:block;font-size:16px;margin-bottom:2px;}
 
-  .header-mid {
-    display:flex; align-items:center; gap:6px;
-    background:var(--surface);
-    border:1px solid var(--border);
-    border-radius:8px;
-    padding:5px 14px;
-    font-family:'JetBrains Mono', monospace;
-    font-size:12px; color:var(--muted);
-  }
-  .header-mid .collection-name { color:var(--mg-green); font-weight:500; }
+  .query-block{background:var(--card);border:1px solid var(--border);border-left:3px solid var(--mg-green);border-radius:10px;margin-bottom:20px;overflow:hidden;animation:slideUp 0.35s ease;}
+  .qb-header{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid var(--border);background:rgba(0,237,100,0.03);}
+  .qb-header-left{display:flex;align-items:center;gap:10px;}
+  .qb-method{background:rgba(0,237,100,0.15);color:var(--mg-green);font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:700;padding:3px 8px;border-radius:5px;letter-spacing:0.5px;}
+  .qb-operation{font-size:12px;color:var(--muted);font-family:'JetBrains Mono',monospace;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:400px;}
+  .qb-copy{background:none;border:1px solid var(--border);color:var(--muted);border-radius:6px;padding:3px 10px;font-size:11px;cursor:pointer;transition:all 0.18s;}
+  .qb-copy:hover{border-color:var(--mg-green);color:var(--mg-green);}
+  .qb-body{padding:14px 16px;}
+  .qb-code{font-family:'JetBrains Mono',monospace;font-size:12.5px;color:#adbac7;line-height:1.7;white-space:pre-wrap;word-break:break-word;}
 
-  .header-right { display:flex; align-items:center; gap:16px; }
-  .conn-badge {
-    display:flex; align-items:center; gap:6px;
-    font-family:'JetBrains Mono', monospace;
-    font-size:11px; color:var(--muted);
-  }
-  .conn-dot {
-    width:7px; height:7px;
-    background:var(--mg-green); border-radius:50%;
-    animation:pulse 2.5s infinite;
-    box-shadow:0 0 6px var(--mg-green);
-  }
-  @keyframes pulse {
-    0%,100%{opacity:1;} 50%{opacity:0.5;}
-  }
+  .stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:20px;}
+  .stat-card{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:16px 18px;transition:all 0.2s;animation:slideUp 0.4s ease;}
+  .stat-card:hover{border-color:var(--mg-green);transform:translateY(-2px);box-shadow:var(--glow-sm);}
+  .sc-label{font-size:10px;font-weight:600;color:var(--muted);letter-spacing:1px;text-transform:uppercase;margin-bottom:6px;}
+  .sc-val{font-size:24px;font-weight:900;line-height:1;margin-bottom:3px;}
+  .sc-sub{font-size:11px;color:var(--muted);font-family:'JetBrains Mono',monospace;}
+  .stat-card:nth-child(1) .sc-val{color:var(--mg-green);}
+  .stat-card:nth-child(2) .sc-val{color:#96d0ff;}
+  .stat-card:nth-child(3) .sc-val{color:var(--amber);}
+  .stat-card:nth-child(4) .sc-val{color:#dcbdfb;}
 
-  .version-tag {
-    background:rgba(0,237,100,0.1);
-    border:1px solid rgba(0,237,100,0.25);
-    color:var(--mg-green);
-    font-size:10px; font-weight:700;
-    font-family:'JetBrains Mono',monospace;
-    padding:3px 8px; border-radius:5px;
-    letter-spacing:0.5px;
-  }
+  .charts-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px;}
+  .chart-card{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:18px;animation:slideUp 0.45s ease;}
+  .cc-title{font-size:12px;font-weight:700;color:var(--text);margin-bottom:3px;}
+  .cc-sub{font-size:10px;color:var(--muted);margin-bottom:14px;}
+  .cc-wrap{position:relative;height:190px;}
 
-  /* ── LAYOUT ── */
-  .workspace {
-    display:grid;
-    grid-template-columns:260px 1fr;
-    flex:1;
-    overflow:hidden;
-  }
+  /* AI RESULTS */
+  .ai-result-block{background:var(--card);border:1px solid var(--border);border-left:3px solid #96d0ff;border-radius:10px;margin-bottom:20px;overflow:hidden;animation:slideUp 0.4s ease;}
+  .air-header{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid var(--border);background:rgba(150,208,255,0.03);}
+  .air-title{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:700;}
+  .air-badge{background:rgba(150,208,255,0.12);color:#96d0ff;font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:700;padding:2px 8px;border-radius:4px;}
+  .air-tabs{display:flex;gap:0;border-bottom:1px solid var(--border);}
+  .air-tab{padding:10px 18px;font-size:12px;font-weight:700;color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;transition:all 0.18s;font-family:'JetBrains Mono',monospace;}
+  .air-tab:hover{color:var(--text);}
+  .air-tab.active-tab{color:var(--mg-green);border-bottom-color:var(--mg-green);}
+  .air-loading{display:flex;align-items:center;gap:10px;color:var(--muted);font-family:'JetBrains Mono',monospace;font-size:12px;padding:20px 16px;}
+  .air-body{padding:0;}
 
-  /* ── SIDEBAR ── */
-  .sidebar {
-    border-right:1px solid var(--border);
-    background:rgba(22,27,34,0.7);
-    display:flex; flex-direction:column;
-    overflow-y:auto;
-    padding:20px 0 24px;
-  }
+  .json-view{font-family:'JetBrains Mono',monospace;font-size:12px;color:#adbac7;line-height:1.8;max-height:340px;overflow-y:auto;background:rgba(0,0,0,0.2);border-radius:0;padding:16px;}
+  .json-key{color:#dcbdfb;} .json-str{color:#96d0ff;} .json-num{color:#6cb6ff;}
+  .json-bool{color:#f47067;} .json-null{color:var(--muted);} .json-bracket{color:var(--mg-green);}
 
-  .sb-section { padding:0 16px; margin-bottom:6px; }
-  .sb-label {
-    font-size:9px; font-weight:700;
-    letter-spacing:2px; color:var(--muted);
-    text-transform:uppercase; margin-bottom:8px;
-    padding:0 4px;
-  }
+  table{width:100%;border-collapse:collapse;}
+  thead th{background:rgba(48,54,61,0.5);padding:9px 14px;text-align:left;font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);border-bottom:1px solid var(--border);font-family:'JetBrains Mono',monospace;}
+  tbody tr{border-bottom:1px solid rgba(48,54,61,0.5);transition:background 0.12s;}
+  tbody tr:hover{background:rgba(0,237,100,0.03);}
+  tbody tr:last-child{border-bottom:none;}
+  td{padding:10px 14px;font-size:12px;color:var(--text);font-family:'JetBrains Mono',monospace;}
+  .badge{display:inline-block;padding:2px 7px;border-radius:4px;font-size:10px;font-weight:700;font-family:'JetBrains Mono',monospace;}
+  .badge-green{background:rgba(0,237,100,0.12);color:var(--mg-green);}
+  .badge-blue{background:rgba(59,130,246,0.12);color:var(--blue);}
+  .badge-red{background:rgba(239,68,68,0.12);color:var(--red);}
+  .badge-amber{background:rgba(245,158,11,0.12);color:var(--amber);}
+  .badge-purple{background:rgba(220,189,251,0.12);color:#dcbdfb;}
 
-  .nav-item {
-    display:flex; align-items:center; gap:9px;
-    padding:9px 10px; border-radius:7px;
-    cursor:pointer; font-size:13px; font-weight:600;
-    color:var(--muted); transition:all 0.18s;
-    margin-bottom:2px;
-  }
-  .nav-item:hover { background:var(--border); color:var(--text); }
-  .nav-item.active { background:rgba(0,237,100,0.1); color:var(--mg-green); }
-  .nav-item .ni { font-size:14px; }
-  .nav-item .nav-count {
-    margin-left:auto;
-    background:var(--border);
-    color:var(--muted);
-    font-family:'JetBrains Mono',monospace;
-    font-size:10px; padding:1px 6px; border-radius:10px;
-  }
+  .pagination{display:flex;align-items:center;justify-content:space-between;padding:10px 16px;border-top:1px solid var(--border);font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--muted);}
+  .page-btns{display:flex;gap:4px;}
+  .page-btn{background:var(--border);border:none;color:var(--muted);border-radius:5px;padding:4px 10px;font-size:11px;cursor:pointer;transition:all 0.15s;font-family:'JetBrains Mono',monospace;}
+  .page-btn:hover{background:var(--card);color:var(--text);}
+  .page-btn.active-page{background:rgba(0,237,100,0.15);color:var(--mg-green);}
 
-  .sb-divider { border:none; border-top:1px solid var(--border); margin:14px 16px; }
-
-  /* Collection list */
-  .collection-item {
-    display:flex; align-items:center; gap:8px;
-    padding:8px 10px; border-radius:7px;
-    cursor:pointer; font-size:12px; font-weight:600;
-    color:var(--muted); transition:all 0.18s;
-    font-family:'JetBrains Mono',monospace;
-    margin-bottom:2px;
-  }
-  .collection-item:hover { background:var(--border); color:var(--text); }
-  .collection-item.active-coll { background:rgba(0,237,100,0.08); color:var(--mg-green); border-left:2px solid var(--mg-green); padding-left:8px; }
-  .coll-icon { font-size:13px; }
-  .coll-count { margin-left:auto; font-size:10px; color:var(--muted); }
-
-  /* Operation type selector */
-  .op-grid {
-    display:grid; grid-template-columns:1fr 1fr;
-    gap:6px;
-  }
-  .op-btn {
-    padding:8px 6px; border-radius:7px;
-    background:var(--card); border:1px solid var(--border);
-    color:var(--muted); font-size:11px; font-weight:700;
-    cursor:pointer; transition:all 0.18s;
-    font-family:'JetBrains Mono',monospace;
-    text-align:center; letter-spacing:0.3px;
-  }
-  .op-btn:hover { border-color:var(--mg-green); color:var(--mg-green); }
-  .op-btn.active-op { background:rgba(0,237,100,0.1); border-color:var(--mg-green); color:var(--mg-green); }
-
-  /* Upload zone */
-  .upload-zone {
-    position:relative;
-    border:2px dashed var(--border);
-    border-radius:10px;
-    padding:16px 12px;
-    text-align:center;
-    cursor:pointer; transition:all 0.25s;
-    background:rgba(0,0,0,0.15);
-  }
-  .upload-zone:hover, .upload-zone.drag-over {
-    border-color:var(--mg-green);
-    background:rgba(0,237,100,0.03);
-    box-shadow:var(--glow-sm);
-  }
-  .upload-zone input[type="file"] {
-    position:absolute; inset:0; opacity:0; cursor:pointer; width:100%; height:100%;
-  }
-  .upload-icon-big { font-size:22px; margin-bottom:5px; display:block; transition:transform 0.25s; }
-  .upload-zone:hover .upload-icon-big { transform:translateY(-2px); }
-  .upload-main-text { font-size:11px; font-weight:700; color:var(--text); margin-bottom:2px; }
-  .upload-sub-text { font-size:10px; color:var(--muted); font-family:'JetBrains Mono',monospace; }
-  .fmt-row { display:flex; gap:4px; justify-content:center; margin-top:8px; flex-wrap:wrap; }
-  .fmt-tag {
-    background:var(--border); color:var(--muted); border-radius:4px;
-    padding:2px 5px; font-size:9px; font-weight:700;
-    font-family:'JetBrains Mono',monospace; letter-spacing:0.5px;
-  }
-
-  .upload-progress { display:none; margin-top:8px; }
-  .prog-bg { background:var(--border); border-radius:3px; height:3px; overflow:hidden; }
-  .prog-fill {
-    height:100%;
-    background:linear-gradient(90deg,var(--mg-green),var(--mg-dark));
-    border-radius:3px; width:0%; transition:width 0.25s;
-  }
-  .prog-label { font-size:9px; color:var(--muted); font-family:'JetBrains Mono',monospace; margin-top:3px; text-align:center; }
-
-  .file-loaded {
-    display:none;
-    background:rgba(0,237,100,0.05);
-    border:1px solid rgba(0,237,100,0.2);
-    border-radius:9px; padding:10px 10px;
-    margin-top:8px; animation:fadeUp 0.3s ease;
-  }
-  .fl-row { display:flex; align-items:center; gap:7px; }
-  .fl-info { flex:1; min-width:0; }
-  .fl-name { font-size:11px; font-weight:700; color:var(--mg-green); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; font-family:'JetBrains Mono',monospace; }
-  .fl-meta { font-size:9px; color:var(--muted); font-family:'JetBrains Mono',monospace; margin-top:2px; }
-  .fl-remove { background:none; border:1px solid var(--border); color:var(--muted); border-radius:5px; padding:2px 6px; font-size:10px; cursor:pointer; transition:all 0.18s; flex-shrink:0; }
-  .fl-remove:hover { border-color:var(--red); color:var(--red); }
-  .fl-preview-btn {
-    margin-top:6px; background:none; border:1px solid var(--border);
-    color:var(--muted); border-radius:6px; padding:3px 8px;
-    font-size:9px; cursor:pointer; transition:all 0.18s;
-    font-family:'JetBrains Mono',monospace; width:100%; letter-spacing:0.5px; font-weight:700;
-  }
-  .fl-preview-btn:hover { border-color:var(--mg-green); color:var(--mg-green); }
-  .fl-preview-data {
-    display:none; margin-top:7px; max-height:110px; overflow-y:auto;
-    font-family:'JetBrains Mono',monospace; font-size:9px;
-    border-top:1px solid var(--border); padding-top:6px;
-  }
-  .fl-preview-data table { width:100%; border-collapse:collapse; }
-  .fl-preview-data th { color:var(--mg-green); text-align:left; padding:1px 5px; border-bottom:1px solid var(--border); white-space:nowrap; font-size:9px; }
-  .fl-preview-data td { padding:1px 5px; color:var(--muted); font-size:9px; border:none; white-space:nowrap; }
-  .fl-preview-data tr:hover td { color:var(--text); }
-
-  /* ── RIGHT PANEL ── */
-  .right-panel { display:flex; flex-direction:column; overflow:hidden; }
-
-  /* Query input area */
-  .query-area {
-    padding:20px 28px 16px;
-    border-bottom:1px solid var(--border);
-    background:rgba(22,27,34,0.5);
-    flex-shrink:0;
-  }
-
-  .qa-top { display:flex; align-items:center; gap:12px; margin-bottom:12px; }
-  .qa-label {
-    font-size:9px; font-weight:700; letter-spacing:2px;
-    color:var(--muted); text-transform:uppercase;
-  }
-  .active-coll-pill {
-    display:flex; align-items:center; gap:5px;
-    background:var(--card); border:1px solid var(--border);
-    border-radius:6px; padding:3px 10px;
-    font-family:'JetBrains Mono',monospace; font-size:11px;
-    color:var(--mg-green);
-  }
-
-  .query-box-wrap { position:relative; }
-  .query-box {
-    width:100%;
-    background:var(--card);
-    border:1px solid var(--border);
-    border-radius:10px;
-    padding:14px 160px 14px 18px;
-    color:var(--text);
-    font-family:'Outfit',sans-serif;
-    font-size:14px; font-weight:400;
-    outline:none; transition:all 0.25s;
-    height:52px; line-height:24px;
-    resize:none;
-  }
-  .query-box:focus {
-    border-color:var(--mg-green);
-    box-shadow:var(--glow);
-    background:rgba(28,35,48,0.95);
-  }
-  .query-box::placeholder { color:var(--muted); }
-
-  .qb-actions {
-    position:absolute; right:8px; top:50%;
-    transform:translateY(-50%);
-    display:flex; gap:6px; align-items:center;
-  }
-  .btn-generate {
-    background:linear-gradient(135deg, var(--mg-green), var(--mg-dark));
-    color:#0d1117; border:none; border-radius:7px;
-    padding:8px 16px;
-    font-family:'Outfit',sans-serif; font-size:12px; font-weight:700;
-    cursor:pointer; transition:all 0.2s; letter-spacing:0.3px;
-    white-space:nowrap;
-  }
-  .btn-generate:hover { transform:scale(1.03); box-shadow:var(--glow); }
-  .btn-generate:active { transform:scale(0.97); }
-  .btn-clr {
-    background:var(--border); color:var(--muted);
-    border:none; border-radius:7px; padding:8px 11px;
-    font-size:12px; cursor:pointer; transition:all 0.18s;
-  }
-  .btn-clr:hover { background:var(--card); color:var(--text); }
-
-  .example-chips { display:flex; gap:7px; margin-top:11px; flex-wrap:wrap; }
-  .chip {
-    background:var(--card); border:1px solid var(--border);
-    border-radius:20px; padding:4px 12px;
-    font-size:11px; color:var(--muted);
-    cursor:pointer; transition:all 0.18s; font-weight:600;
-  }
-  .chip:hover { border-color:var(--mg-green); color:var(--mg-green); background:rgba(0,237,100,0.05); }
-
-  /* Data source banner */
-  .ds-banner {
-    display:none; align-items:center; gap:8px;
-    padding:7px 12px; margin-top:10px;
-    background:rgba(0,237,100,0.05);
-    border:1px solid rgba(0,237,100,0.2);
-    border-radius:7px;
-    font-family:'JetBrains Mono',monospace; font-size:11px;
-    animation:fadeUp 0.3s ease;
-  }
-  .ds-banner .ds-label { color:var(--muted); font-size:10px; }
-  .ds-banner .ds-val { color:var(--mg-green); font-weight:700; flex:1; }
-  .ds-banner .ds-rows { color:var(--muted); font-size:10px; }
-  @keyframes fadeUp {
-    from{opacity:0;transform:translateY(6px);}
-    to{opacity:1;transform:translateY(0);}
-  }
-
-  /* ── CONTENT ── */
-  .content { flex:1; overflow-y:auto; padding:22px 28px 28px; }
-
-  /* Empty state */
-  .empty-state { text-align:center; padding:70px 20px; color:var(--muted); }
-  .es-icon {
-    font-size:52px; margin-bottom:16px; display:block;
-    filter:grayscale(0.3);
-  }
-  .es-title { font-size:18px; font-weight:700; color:var(--text); margin-bottom:8px; }
-  .es-sub { font-size:13px; line-height:1.7; }
-
-  /* Loading */
-  .loading { display:none; align-items:center; gap:12px; padding:20px 0; font-family:'JetBrains Mono',monospace; font-size:12px; color:var(--muted); }
-  .spinner { width:16px; height:16px; border:2px solid var(--border); border-top-color:var(--mg-green); border-radius:50%; animation:spin 0.65s linear infinite; }
-  @keyframes spin { to{transform:rotate(360deg);} }
-
-  /* Results */
-  @keyframes slideUp {
-    from{opacity:0;transform:translateY(12px);}
-    to{opacity:1;transform:translateY(0);}
-  }
-
-  /* Pipeline steps */
-  .pipeline-steps {
-    display:flex; gap:0; margin-bottom:18px;
-    border-radius:8px; overflow:hidden;
-    border:1px solid var(--border);
-  }
-  .ps {
-    flex:1; padding:10px 8px; text-align:center;
-    font-size:10px; font-weight:700; letter-spacing:0.3px;
-    color:var(--muted); background:var(--card);
-    border-right:1px solid var(--border); transition:all 0.3s;
-  }
-  .ps:last-child { border-right:none; }
-  .ps.done { color:var(--mg-green); background:rgba(0,237,100,0.06); }
-  .ps.active { color:var(--text); background:rgba(0,237,100,0.12); }
-  .ps-icon { display:block; font-size:16px; margin-bottom:2px; }
-
-  /* MongoDB query block */
-  .query-block {
-    background:var(--card);
-    border:1px solid var(--border);
-    border-left:3px solid var(--mg-green);
-    border-radius:10px;
-    margin-bottom:20px;
-    overflow:hidden;
-    animation:slideUp 0.35s ease;
-  }
-  .qb-header {
-    display:flex; align-items:center; justify-content:space-between;
-    padding:12px 16px;
-    border-bottom:1px solid var(--border);
-    background:rgba(0,237,100,0.03);
-  }
-  .qb-header-left { display:flex; align-items:center; gap:10px; }
-  .qb-method {
-    background:rgba(0,237,100,0.15);
-    color:var(--mg-green); font-family:'JetBrains Mono',monospace;
-    font-size:11px; font-weight:700; padding:3px 8px; border-radius:5px;
-    letter-spacing:0.5px;
-  }
-  .qb-operation { font-size:12px; color:var(--muted); font-family:'JetBrains Mono',monospace; }
-  .qb-copy {
-    background:none; border:1px solid var(--border);
-    color:var(--muted); border-radius:6px;
-    padding:3px 10px; font-size:11px; cursor:pointer; transition:all 0.18s;
-  }
-  .qb-copy:hover { border-color:var(--mg-green); color:var(--mg-green); }
-  .qb-body { padding:14px 16px; }
-  .qb-code {
-    font-family:'JetBrains Mono',monospace;
-    font-size:12.5px; color:#adbac7; line-height:1.7;
-    white-space:pre-wrap; word-break:break-word;
-  }
-
-  /* Syntax colors */
-  .kw   { color:#f47067; }   /* keywords: find, aggregate, $match */
-  .field{ color:#dcbdfb; }   /* field names */
-  .str  { color:#96d0ff; }   /* strings */
-  .num  { color:#6cb6ff; }   /* numbers */
-  .op   { color:var(--mg-green); } /* operators: $gt, $eq */
-  .coll { color:#e3b341; }   /* collection name */
-  .fn   { color:#f69d50; }   /* function names */
-  .comment { color:var(--muted); font-style:italic; }
-
-  /* Stats row */
-  .stats-row { display:grid; grid-template-columns:repeat(4,1fr); gap:14px; margin-bottom:20px; }
-  .stat-card {
-    background:var(--card); border:1px solid var(--border);
-    border-radius:10px; padding:16px 18px;
-    transition:all 0.2s; animation:slideUp 0.4s ease;
-  }
-  .stat-card:hover { border-color:var(--mg-green); transform:translateY(-2px); box-shadow:var(--glow-sm); }
-  .sc-label { font-size:10px; font-weight:600; color:var(--muted); letter-spacing:1px; text-transform:uppercase; margin-bottom:6px; }
-  .sc-val { font-size:24px; font-weight:900; line-height:1; margin-bottom:3px; }
-  .sc-sub { font-size:11px; color:var(--muted); font-family:'JetBrains Mono',monospace; }
-  .stat-card:nth-child(1) .sc-val { color:var(--mg-green); }
-  .stat-card:nth-child(2) .sc-val { color:#96d0ff; }
-  .stat-card:nth-child(3) .sc-val { color:var(--amber); }
-  .stat-card:nth-child(4) .sc-val { color:#dcbdfb; }
-
-  /* Charts */
-  .charts-grid { display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:20px; }
-  .chart-card {
-    background:var(--card); border:1px solid var(--border);
-    border-radius:10px; padding:18px; animation:slideUp 0.45s ease;
-  }
-  .cc-title { font-size:12px; font-weight:700; color:var(--text); margin-bottom:3px; }
-  .cc-sub { font-size:10px; color:var(--muted); margin-bottom:14px; }
-  .cc-wrap { position:relative; height:190px; }
-
-  /* Results table */
-  .table-card {
-    background:var(--card); border:1px solid var(--border);
-    border-radius:10px; overflow:hidden;
-    margin-bottom:20px; animation:slideUp 0.5s ease;
-  }
-  .tc-header {
-    display:flex; align-items:center; justify-content:space-between;
-    padding:13px 16px; border-bottom:1px solid var(--border);
-    background:rgba(0,237,100,0.02);
-  }
-  .tc-title { font-size:13px; font-weight:700; }
-  .tc-count { font-family:'JetBrains Mono',monospace; font-size:11px; color:var(--muted); }
-  table { width:100%; border-collapse:collapse; }
-  thead th {
-    background:rgba(48,54,61,0.5); padding:9px 14px;
-    text-align:left; font-size:10px; font-weight:700;
-    letter-spacing:1.5px; text-transform:uppercase;
-    color:var(--muted); border-bottom:1px solid var(--border);
-    font-family:'JetBrains Mono',monospace;
-  }
-  tbody tr { border-bottom:1px solid rgba(48,54,61,0.5); transition:background 0.12s; }
-  tbody tr:hover { background:rgba(0,237,100,0.03); }
-  tbody tr:last-child { border-bottom:none; }
-  td { padding:10px 14px; font-size:12px; color:var(--text); font-family:'JetBrains Mono',monospace; }
-
-  .badge { display:inline-block; padding:2px 7px; border-radius:4px; font-size:10px; font-weight:700; font-family:'JetBrains Mono',monospace; }
-  .badge-green  { background:rgba(0,237,100,0.12); color:var(--mg-green); }
-  .badge-blue   { background:rgba(59,130,246,0.12); color:var(--blue); }
-  .badge-red    { background:rgba(239,68,68,0.12); color:var(--red); }
-  .badge-amber  { background:rgba(245,158,11,0.12); color:var(--amber); }
-  .badge-purple { background:rgba(220,189,251,0.12); color:#dcbdfb; }
-
-  /* Logs */
-  .logs-card {
-    background:var(--card); border:1px solid var(--border);
-    border-radius:10px; overflow:hidden; animation:slideUp 0.55s ease;
-  }
-  .lc-header {
-    display:flex; align-items:center; justify-content:space-between;
-    padding:12px 16px; border-bottom:1px solid var(--border);
-  }
-  .lc-title { font-size:12px; font-weight:700; }
-  .lc-live {
-    display:flex; align-items:center; gap:5px;
-    font-size:10px; color:var(--mg-green);
-    font-family:'JetBrains Mono',monospace;
-  }
-  .log-body {
-    padding:10px 16px; max-height:140px;
-    overflow-y:auto; font-family:'JetBrains Mono',monospace;
-    font-size:11px; line-height:2;
-  }
-  .log-line { display:flex; gap:12px; animation:fadeIn 0.25s ease; }
+  .logs-card{background:var(--card);border:1px solid var(--border);border-radius:10px;overflow:hidden;animation:slideUp 0.55s ease;}
+  .lc-header{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid var(--border);}
+  .lc-title{font-size:12px;font-weight:700;}
+  .lc-live{display:flex;align-items:center;gap:5px;font-size:10px;color:var(--mg-green);font-family:'JetBrains Mono',monospace;}
+  .log-body{padding:10px 16px;max-height:140px;overflow-y:auto;font-family:'JetBrains Mono',monospace;font-size:11px;line-height:2;}
+  .log-line{display:flex;gap:12px;animation:fadeIn 0.25s ease;}
   @keyframes fadeIn{from{opacity:0}to{opacity:1}}
-  .lg-time { color:var(--muted); }
-  .lg-info    { color:#96d0ff; }
-  .lg-success { color:var(--mg-green); }
-  .lg-warn    { color:var(--amber); }
-  .lg-error   { color:var(--red); }
-  .lg-msg     { color:var(--text); }
+  .lg-time{color:var(--muted);} .lg-info{color:#96d0ff;} .lg-success{color:var(--mg-green);}
+  .lg-warn{color:var(--amber);} .lg-error{color:var(--red);} .lg-msg{color:var(--text);}
+  .summary-body{padding:16px;}
 
-  /* scrollbar */
-  ::-webkit-scrollbar { width:4px; height:4px; }
-  ::-webkit-scrollbar-track { background:transparent; }
-  ::-webkit-scrollbar-thumb { background:var(--border); border-radius:2px; }
-  ::-webkit-scrollbar-thumb:hover { background:var(--muted); }
+  ::-webkit-scrollbar{width:4px;height:4px;}
+  ::-webkit-scrollbar-track{background:transparent;}
+  ::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px;}
 </style>
 </head>
 <body>
 <div class="app">
 
-  <!-- HEADER -->
   <header>
     <div class="logo">
       <div class="logo-leaf">🍃</div>
@@ -548,31 +212,24 @@
       <span style="color:var(--muted);">db.</span><span class="collection-name" id="headerColl">employees</span><span style="color:var(--muted);">.find(...)</span>
     </div>
     <div class="header-right">
+      <div class="ai-badge">✦ Claude AI Execution</div>
       <span class="version-tag">v7.0</span>
-      <div class="conn-badge">
-        <div class="conn-dot"></div>
-        CONNECTED
-      </div>
+      <div class="conn-badge"><div class="conn-dot"></div>CONNECTED</div>
     </div>
   </header>
 
   <div class="workspace">
-
     <!-- SIDEBAR -->
     <aside class="sidebar">
-
       <div class="sb-section">
         <div class="sb-label">Navigation</div>
         <div class="nav-item active" onclick="setNav(this)"><span class="ni">⚡</span>Query Generator<span class="nav-count">5</span></div>
         <div class="nav-item" onclick="setNav(this)"><span class="ni">📊</span>Aggregations</div>
         <div class="nav-item" onclick="setNav(this)"><span class="ni">🗂️</span>Collections</div>
         <div class="nav-item" onclick="setNav(this)"><span class="ni">📋</span>Query History</div>
-        <div class="nav-item" onclick="setNav(this)"><span class="ni">🔍</span>Indexes</div>
         <div class="nav-item" onclick="setNav(this)"><span class="ni">⚙️</span>Settings</div>
       </div>
-
       <hr class="sb-divider">
-
       <div class="sb-section">
         <div class="sb-label">Collections</div>
         <div class="collection-item active-coll" onclick="selectColl(this,'employees')"><span class="coll-icon">📁</span>employees<span class="coll-count">1,240</span></div>
@@ -580,9 +237,7 @@
         <div class="collection-item" onclick="selectColl(this,'projects')"><span class="coll-icon">📁</span>projects<span class="coll-count">348</span></div>
         <div class="collection-item" onclick="selectColl(this,'salaries')"><span class="coll-icon">📁</span>salaries<span class="coll-count">4,820</span></div>
       </div>
-
       <hr class="sb-divider">
-
       <div class="sb-section">
         <div class="sb-label">Operation Type</div>
         <div class="op-grid">
@@ -594,33 +249,20 @@
           <div class="op-btn" onclick="selectOp(this)">countDocs()</div>
         </div>
       </div>
-
       <hr class="sb-divider">
-
-      <!-- UPLOAD -->
       <div class="sb-section">
         <div class="sb-label">Upload Data File</div>
-        <div class="upload-zone" id="uploadZone"
-             ondragover="handleDragOver(event)"
-             ondragleave="handleDragLeave(event)"
-             ondrop="handleDrop(event)">
+        <div class="upload-zone" id="uploadZone" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)" ondrop="handleDrop(event)">
           <input type="file" id="fileInput" accept=".csv,.xlsx,.xls,.json,.tsv" onchange="handleFileSelect(event)">
           <span class="upload-icon-big">📂</span>
           <div class="upload-main-text">Drop file or click to browse</div>
-          <div class="upload-sub-text">Max 10MB</div>
-          <div class="fmt-row">
-            <span class="fmt-tag">CSV</span>
-            <span class="fmt-tag">JSON</span>
-            <span class="fmt-tag">XLSX</span>
-            <span class="fmt-tag">TSV</span>
-          </div>
+          <div class="upload-sub-text">Query runs on your real data</div>
+          <div class="fmt-row"><span class="fmt-tag">CSV</span><span class="fmt-tag">JSON</span><span class="fmt-tag">XLSX</span><span class="fmt-tag">TSV</span></div>
         </div>
-
         <div class="upload-progress" id="uploadProgress">
           <div class="prog-bg"><div class="prog-fill" id="progFill"></div></div>
           <div class="prog-label" id="progLabel">Parsing...</div>
         </div>
-
         <div class="file-loaded" id="fileLoaded">
           <div class="fl-row">
             <span style="font-size:18px;">📄</span>
@@ -630,13 +272,11 @@
             </div>
             <button class="fl-remove" onclick="removeFile()">✕</button>
           </div>
-          <button class="fl-preview-btn" id="flPreviewBtn" onclick="togglePreview()">▾ PREVIEW DOCUMENTS</button>
+          <button class="fl-preview-btn" id="flPreviewBtn" onclick="togglePreview()">▾ PREVIEW</button>
           <div class="fl-preview-data" id="flPreviewData"></div>
         </div>
       </div>
-
       <hr class="sb-divider">
-
       <div class="sb-section">
         <div class="sb-label">Database</div>
         <div style="background:var(--card);border:1px solid var(--border);border-radius:8px;padding:10px 12px;">
@@ -645,34 +285,28 @@
           <div style="font-size:10px;color:var(--muted);margin-top:3px;font-family:'JetBrains Mono',monospace;" id="dbMeta">4 collections · 6,420 docs</div>
         </div>
       </div>
-
     </aside>
 
-    <!-- RIGHT PANEL -->
+    <!-- RIGHT -->
     <div class="right-panel">
-
-      <!-- QUERY INPUT -->
       <div class="query-area">
         <div class="qa-top">
-          <span class="qa-label">Natural Language → MongoDB</span>
+          <span class="qa-label">Natural Language → MongoDB + Real Results</span>
           <div class="active-coll-pill">🍃 db.<span id="activeColl">employees</span></div>
         </div>
         <div class="query-box-wrap">
-          <input type="text" class="query-box" id="queryInput"
-            placeholder="e.g. Find all employees in Sales with salary over 80000"/>
+          <input type="text" class="query-box" id="queryInput" placeholder="e.g. Find all employees in Sales with salary over 80000"/>
           <div class="qb-actions">
             <button class="btn-clr" onclick="clearQuery()">Clear</button>
-            <button class="btn-generate" onclick="runQuery()">⚡ Generate</button>
+            <button class="btn-generate" onclick="runQuery()">⚡ Generate + Run</button>
           </div>
         </div>
-
         <div class="ds-banner" id="dsBanner">
           <span style="font-size:14px;">📂</span>
           <span class="ds-label">SOURCE:</span>
           <span class="ds-val" id="dsFileName">—</span>
           <span class="ds-rows" id="dsRows">—</span>
         </div>
-
         <div class="example-chips">
           <span class="chip" onclick="useChip(this)">Find all employees in Sales</span>
           <span class="chip" onclick="useChip(this)">Top 5 highest paid</span>
@@ -682,33 +316,27 @@
         </div>
       </div>
 
-      <!-- CONTENT -->
       <div class="content" id="content">
-
         <div class="empty-state" id="emptyState">
           <span class="es-icon">🍃</span>
           <div class="es-title">MongoDB Query Generator</div>
-          <div class="es-sub">Type a question in plain English above.<br>The AI will convert it into a MongoDB query instantly.</div>
+          <div class="es-sub">Type a question in plain English above.<br>Claude AI will generate the MongoDB query <strong>and return real result data</strong> instantly.</div>
         </div>
-
         <div class="loading" id="loadingState">
           <div class="spinner"></div>
           <span id="loadingMsg">Parsing natural language...</span>
         </div>
 
         <div id="results" style="display:none;">
-
-          <!-- Pipeline steps -->
           <div class="pipeline-steps">
-            <div class="ps done" id="ps1"><span class="ps-icon">✓</span>Tokenize</div>
-            <div class="ps done" id="ps2"><span class="ps-icon">✓</span>Intent</div>
-            <div class="ps done" id="ps3"><span class="ps-icon">✓</span>Schema Map</div>
-            <div class="ps done" id="ps4"><span class="ps-icon">✓</span>Query Gen</div>
-            <div class="ps done" id="ps5"><span class="ps-icon">✓</span>Optimize</div>
-            <div class="ps done" id="ps6"><span class="ps-icon">✓</span>Execute</div>
+            <div class="ps" id="ps1"><span class="ps-icon">○</span>Tokenize</div>
+            <div class="ps" id="ps2"><span class="ps-icon">○</span>Intent</div>
+            <div class="ps" id="ps3"><span class="ps-icon">○</span>Schema Map</div>
+            <div class="ps" id="ps4"><span class="ps-icon">○</span>Query Gen</div>
+            <div class="ps" id="ps5"><span class="ps-icon">○</span>Execute</div>
+            <div class="ps" id="ps6"><span class="ps-icon">○</span>Results</div>
           </div>
 
-          <!-- Query block -->
           <div class="query-block">
             <div class="qb-header">
               <div class="qb-header-left">
@@ -722,31 +350,13 @@
             </div>
           </div>
 
-          <!-- Stats -->
           <div class="stats-row">
-            <div class="stat-card">
-              <div class="sc-label">Documents</div>
-              <div class="sc-val" id="statDocs">—</div>
-              <div class="sc-sub">matched</div>
-            </div>
-            <div class="stat-card">
-              <div class="sc-label">Confidence</div>
-              <div class="sc-val" id="statConf">—</div>
-              <div class="sc-sub">model accuracy</div>
-            </div>
-            <div class="stat-card">
-              <div class="sc-label">Exec Time</div>
-              <div class="sc-val" id="statTime">—</div>
-              <div class="sc-sub">milliseconds</div>
-            </div>
-            <div class="stat-card">
-              <div class="sc-label">Index Used</div>
-              <div class="sc-val" id="statIndex">—</div>
-              <div class="sc-sub">scan type</div>
-            </div>
+            <div class="stat-card"><div class="sc-label">Documents</div><div class="sc-val" id="statDocs">—</div><div class="sc-sub">matched</div></div>
+            <div class="stat-card"><div class="sc-label">Fields</div><div class="sc-val" id="statFields">—</div><div class="sc-sub">per document</div></div>
+            <div class="stat-card"><div class="sc-label">Exec Time</div><div class="sc-val" id="statTime">—</div><div class="sc-sub">milliseconds</div></div>
+            <div class="stat-card"><div class="sc-label">Index</div><div class="sc-val" id="statIndex">—</div><div class="sc-sub">scan type</div></div>
           </div>
 
-          <!-- Charts -->
           <div class="charts-grid">
             <div class="chart-card">
               <div class="cc-title">Query Method Distribution</div>
@@ -760,21 +370,40 @@
             </div>
           </div>
 
-          <!-- Results table -->
-          <div class="table-card">
-            <div class="tc-header">
-              <span class="tc-title">Result Documents</span>
-              <span class="tc-count" id="tableCount">0 documents</span>
+          <!-- RESULT BLOCK -->
+          <div class="ai-result-block">
+            <div class="air-header">
+              <div class="air-title">
+                <span>✦</span>
+                <span>Query Results</span>
+                <span class="air-badge" id="resultBadge">AI Executed</span>
+              </div>
+              <button style="background:none;border:1px solid var(--border);color:var(--muted);border-radius:6px;padding:3px 10px;font-size:11px;cursor:pointer;transition:all 0.18s;font-family:'JetBrains Mono',monospace;" onmouseover="this.style.borderColor='var(--mg-green)';this.style.color='var(--mg-green)'" onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--muted)'" onclick="exportResults()">⬇ Export JSON</button>
             </div>
-            <div style="overflow-x:auto;">
-              <table>
-                <thead id="tableHead"></thead>
-                <tbody id="tableBody"></tbody>
-              </table>
+            <div class="air-tabs">
+              <div class="air-tab active-tab" onclick="switchTab('table',this)">📋 Table</div>
+              <div class="air-tab" onclick="switchTab('json',this)">{ } JSON</div>
+              <div class="air-tab" onclick="switchTab('summary',this)">💡 Summary</div>
+            </div>
+            <div id="airLoading" class="air-loading" style="display:none;">
+              <div class="spinner"></div>
+              <span id="airLoadingMsg">Claude AI is executing your query...</span>
+            </div>
+            <div id="tabTable" class="air-body">
+              <div style="overflow-x:auto;"><table><thead id="tableHead"></thead><tbody id="tableBody"></tbody></table></div>
+              <div class="pagination">
+                <span id="pageInfo">0 documents</span>
+                <div class="page-btns" id="pageBtns"></div>
+              </div>
+            </div>
+            <div id="tabJson" class="air-body" style="display:none;">
+              <div class="json-view" id="jsonView"></div>
+            </div>
+            <div id="tabSummary" class="air-body" style="display:none;">
+              <div class="summary-body" id="summaryView"></div>
             </div>
           </div>
 
-          <!-- Logs -->
           <div class="logs-card">
             <div class="lc-header">
               <span class="lc-title">Query Execution Log</span>
@@ -782,7 +411,6 @@
             </div>
             <div class="log-body" id="logBody"></div>
           </div>
-
         </div>
       </div>
     </div>
@@ -790,471 +418,410 @@
 </div>
 
 <script>
-// ── MONGODB QUERY DATA ──
-const QUERIES = {
-  "find all employees in sales": {
-    method: "find()",
-    operation: "db.employees.find(...)",
-    code: `db.<span class="coll">employees</span>.<span class="fn">find</span>(
-  { <span class="field">department</span>: <span class="str">"Sales"</span> },
-  {
-    <span class="field">_id</span>: <span class="num">0</span>,
-    <span class="field">employee_id</span>: <span class="num">1</span>,
-    <span class="field">name</span>: <span class="num">1</span>,
-    <span class="field">department</span>: <span class="num">1</span>,
-    <span class="field">salary</span>: <span class="num">1</span>,
-    <span class="field">hire_date</span>: <span class="num">1</span>,
-    <span class="field">status</span>: <span class="num">1</span>
-  }
-).<span class="fn">sort</span>({ <span class="field">name</span>: <span class="num">1</span> })`,
-    docs: 8, conf: "96%", time: "12ms", index: "IXSCAN",
-    headers: ["employee_id","name","department","salary","hire_date","status"],
-    data: [
-      ["E001","Alice Johnson","Sales","82000","2019-03-12","active"],
-      ["E004","Bob Martinez","Sales","74500","2021-07-08","active"],
-      ["E011","Carol White","Sales","91200","2018-01-23","active"],
-      ["E015","David Lee","Sales","68000","2022-11-01","active"],
-      ["E022","Emma Davis","Sales","79800","2020-05-17","on-leave"],
-      ["E031","Frank Kim","Sales","88400","2017-09-30","active"],
-      ["E038","Grace Patel","Sales","72100","2023-02-14","active"],
-      ["E042","Hiro Tanaka","Sales","83600","2019-11-22","active"],
-    ],
-    badges: { 5: {"active":"green","on-leave":"amber","inactive":"red"} }
-  },
-
-  "top 5 highest paid": {
-    method: "find()",
-    operation: "db.employees.find(...).sort().limit()",
-    code: `db.<span class="coll">employees</span>.<span class="fn">find</span>(
-  {},
-  { <span class="field">_id</span>: <span class="num">0</span>, <span class="field">name</span>: <span class="num">1</span>, <span class="field">department</span>: <span class="num">1</span>, <span class="field">salary</span>: <span class="num">1</span> }
-)
-.<span class="fn">sort</span>({ <span class="field">salary</span>: <span class="op">-1</span> })
-.<span class="fn">limit</span>(<span class="num">5</span>)`,
-    docs: 5, conf: "98%", time: "8ms", index: "COLLSCAN",
-    headers: ["name","department","salary","rank"],
-    data: [
-      ["Michael Scott","Management","145000","#1"],
-      ["Sarah Connor","Engineering","138500","#2"],
-      ["James Wilson","Engineering","127300","#3"],
-      ["Lisa Park","Finance","121000","#4"],
-      ["Carol White","Sales","91200","#5"],
-    ],
-    badges: {}
-  },
-
-  "count by department": {
-    method: "aggregate()",
-    operation: "db.employees.aggregate([...])",
-    code: `db.<span class="coll">employees</span>.<span class="fn">aggregate</span>([
-  {
-    <span class="op">$group</span>: {
-      <span class="field">_id</span>: <span class="str">"$department"</span>,
-      <span class="field">total</span>: { <span class="op">$sum</span>: <span class="num">1</span> },
-      <span class="field">avg_salary</span>: { <span class="op">$avg</span>: <span class="str">"$salary"</span> }
-    }
-  },
-  { <span class="op">$sort</span>: { <span class="field">total</span>: <span class="op">-1</span> } },
-  {
-    <span class="op">$project</span>: {
-      <span class="field">department</span>: <span class="str">"$_id"</span>,
-      <span class="field">total</span>: <span class="num">1</span>,
-      <span class="field">avg_salary</span>: { <span class="op">$round</span>: [<span class="str">"$avg_salary"</span>, <span class="num">0</span>] },
-      <span class="field">_id</span>: <span class="num">0</span>
-    }
-  }
-])`,
-    docs: 6, conf: "97%", time: "18ms", index: "COLLSCAN",
-    headers: ["department","total","avg_salary","% of total"],
-    data: [
-      ["Engineering","312","118400","25.2%"],
-      ["Sales","287","79800","23.1%"],
-      ["Operations","198","68200","16.0%"],
-      ["Marketing","156","85600","12.6%"],
-      ["Finance","142","95100","11.5%"],
-      ["Management","44","132000","3.6%"],
-    ],
-    badges: {}
-  },
-
-  "hired after 2020": {
-    method: "find()",
-    operation: "db.employees.find({ hire_date: { $gt: ... } })",
-    code: `db.<span class="coll">employees</span>.<span class="fn">find</span>(
-  {
-    <span class="field">hire_date</span>: {
-      <span class="op">$gt</span>: <span class="fn">ISODate</span>(<span class="str">"2020-12-31T00:00:00Z"</span>)
-    }
-  },
-  { <span class="field">_id</span>: <span class="num">0</span>, <span class="field">employee_id</span>: <span class="num">1</span>, <span class="field">name</span>: <span class="num">1</span>, <span class="field">department</span>: <span class="num">1</span>, <span class="field">hire_date</span>: <span class="num">1</span> }
-).<span class="fn">sort</span>({ <span class="field">hire_date</span>: <span class="op">-1</span> })`,
-    docs: 7, conf: "95%", time: "14ms", index: "IXSCAN",
-    headers: ["employee_id","name","department","hire_date","experience"],
-    data: [
-      ["E091","Noah Adams","Engineering","2023-08-14","< 1 yr"],
-      ["E038","Grace Patel","Sales","2023-02-14","< 1 yr"],
-      ["E015","David Lee","Sales","2022-11-01","1 yr"],
-      ["E082","Mia Turner","Marketing","2022-10-05","1 yr"],
-      ["E074","Liam Chen","Finance","2022-04-19","1 yr"],
-      ["E067","Olivia Brown","Operations","2021-09-28","2 yrs"],
-      ["E004","Bob Martinez","Sales","2021-07-08","2 yrs"],
-    ],
-    badges: {}
-  },
-
-  "average salary per dept": {
-    method: "aggregate()",
-    operation: "db.employees.aggregate([{ $group }, { $sort }])",
-    code: `db.<span class="coll">employees</span>.<span class="fn">aggregate</span>([
-  {
-    <span class="op">$group</span>: {
-      <span class="field">_id</span>: <span class="str">"$department"</span>,
-      <span class="field">avg_salary</span>: { <span class="op">$avg</span>:  <span class="str">"$salary"</span> },
-      <span class="field">min_salary</span>: { <span class="op">$min</span>:  <span class="str">"$salary"</span> },
-      <span class="field">max_salary</span>: { <span class="op">$max</span>:  <span class="str">"$salary"</span> },
-      <span class="field">count</span>:      { <span class="op">$sum</span>:  <span class="num">1</span> }
-    }
-  },
-  {
-    <span class="op">$project</span>: {
-      <span class="field">department</span>: <span class="str">"$_id"</span>, <span class="field">_id</span>: <span class="num">0</span>,
-      <span class="field">avg_salary</span>: { <span class="op">$round</span>: [<span class="str">"$avg_salary"</span>, <span class="num">0</span>] },
-      <span class="field">min_salary</span>: <span class="num">1</span>, <span class="field">max_salary</span>: <span class="num">1</span>, <span class="field">count</span>: <span class="num">1</span>
-    }
-  },
-  { <span class="op">$sort</span>: { <span class="field">avg_salary</span>: <span class="op">-1</span> } }
-])`,
-    docs: 6, conf: "94%", time: "21ms", index: "COLLSCAN",
-    headers: ["department","avg_salary","min_salary","max_salary","count"],
-    data: [
-      ["Management","132000","98000","145000","44"],
-      ["Engineering","118400","86000","138500","312"],
-      ["Finance","95100","72000","121000","142"],
-      ["Marketing","85600","64000","112000","156"],
-      ["Sales","79800","68000","91200","287"],
-      ["Operations","68200","52000","88000","198"],
-    ],
-    badges: {}
-  }
-};
-
-// state
-let modelChart=null, timeChart=null;
+// ── STATE ──
+let modelChart=null,timeChart=null;
 const timeHistory=[22,14,31,18,40,12,27,19,35,16];
 const methodCounts={find:6,aggregate:3,insert:1,update:1};
-let uploadedFile=null, previewOpen=false;
-let activeColl='employees', activeOp='find()';
+let uploadedFile=null,previewOpen=false,activeColl='employees';
+let currentResultDocs=[];
+const PAGE_SIZE=10;
 
-function norm(s){ return s.toLowerCase().replace(/[^a-z0-9 ]/g,'').trim(); }
-function useChip(el){ document.getElementById('queryInput').value=el.textContent; }
+// ── BUILT-IN DATASET ──
+const DEFAULT_DATA=[
+  {employee_id:"E001",name:"Alice Johnson",department:"Sales",salary:82000,hire_date:"2019-03-12",status:"active",age:34},
+  {employee_id:"E002",name:"Ben Torres",department:"Engineering",salary:115000,hire_date:"2018-07-22",status:"active",age:29},
+  {employee_id:"E003",name:"Chloe Kim",department:"Marketing",salary:78000,hire_date:"2020-01-15",status:"active",age:31},
+  {employee_id:"E004",name:"Bob Martinez",department:"Sales",salary:74500,hire_date:"2021-07-08",status:"active",age:27},
+  {employee_id:"E005",name:"Diana Roy",department:"Engineering",salary:132000,hire_date:"2016-11-03",status:"active",age:38},
+  {employee_id:"E006",name:"Ethan Park",department:"Finance",salary:95000,hire_date:"2019-09-18",status:"active",age:33},
+  {employee_id:"E007",name:"Fiona Chen",department:"Operations",salary:67000,hire_date:"2022-03-27",status:"active",age:26},
+  {employee_id:"E008",name:"George Hall",department:"Management",salary:145000,hire_date:"2014-06-11",status:"active",age:45},
+  {employee_id:"E009",name:"Hannah Lee",department:"Engineering",salary:121000,hire_date:"2017-02-28",status:"on-leave",age:35},
+  {employee_id:"E010",name:"Ivan Patel",department:"Sales",salary:68000,hire_date:"2023-05-09",status:"active",age:24},
+  {employee_id:"E011",name:"Carol White",department:"Sales",salary:91200,hire_date:"2018-01-23",status:"active",age:36},
+  {employee_id:"E012",name:"Julia Adams",department:"Marketing",salary:82500,hire_date:"2020-08-14",status:"active",age:30},
+  {employee_id:"E013",name:"Kevin Brown",department:"Engineering",salary:138500,hire_date:"2015-04-17",status:"active",age:40},
+  {employee_id:"E014",name:"Laura Nguyen",department:"Finance",salary:88000,hire_date:"2021-12-01",status:"active",age:28},
+  {employee_id:"E015",name:"David Lee",department:"Sales",salary:68000,hire_date:"2022-11-01",status:"active",age:25},
+  {employee_id:"E016",name:"Maria Lopez",department:"Operations",salary:72000,hire_date:"2019-06-30",status:"active",age:32},
+  {employee_id:"E017",name:"Nathan Clark",department:"Engineering",salary:109000,hire_date:"2018-10-05",status:"active",age:37},
+  {employee_id:"E018",name:"Olivia Wright",department:"Management",salary:128000,hire_date:"2016-03-22",status:"active",age:42},
+  {employee_id:"E019",name:"Paul Scott",department:"Finance",salary:97500,hire_date:"2020-04-10",status:"inactive",age:44},
+  {employee_id:"E020",name:"Quinn Evans",department:"Marketing",salary:76000,hire_date:"2022-07-19",status:"active",age:29},
+  {employee_id:"E021",name:"Rachel Green",department:"Operations",salary:63000,hire_date:"2023-01-11",status:"active",age:23},
+  {employee_id:"E022",name:"Emma Davis",department:"Sales",salary:79800,hire_date:"2020-05-17",status:"on-leave",age:31},
+  {employee_id:"E023",name:"Sam Turner",department:"Engineering",salary:125000,hire_date:"2017-08-09",status:"active",age:39},
+  {employee_id:"E024",name:"Tara Mitchell",department:"Finance",salary:91000,hire_date:"2019-11-14",status:"active",age:34},
+  {employee_id:"E025",name:"Uma Sharma",department:"Marketing",salary:85000,hire_date:"2021-02-25",status:"active",age:28},
+  {employee_id:"E031",name:"Frank Kim",department:"Sales",salary:88400,hire_date:"2017-09-30",status:"active",age:41},
+  {employee_id:"E038",name:"Grace Patel",department:"Sales",salary:72100,hire_date:"2023-02-14",status:"active",age:24},
+  {employee_id:"E042",name:"Hiro Tanaka",department:"Sales",salary:83600,hire_date:"2019-11-22",status:"active",age:33},
+  {employee_id:"E056",name:"James Wilson",department:"Engineering",salary:127300,hire_date:"2016-07-15",status:"active",age:43},
+  {employee_id:"E067",name:"Olivia Brown",department:"Operations",salary:69000,hire_date:"2021-09-28",status:"active",age:27},
+  {employee_id:"E069",name:"Lisa Park",department:"Finance",salary:121000,hire_date:"2016-05-03",status:"active",age:41},
+  {employee_id:"E074",name:"Liam Chen",department:"Finance",salary:84000,hire_date:"2022-04-19",status:"active",age:26},
+  {employee_id:"E077",name:"Michael Scott",department:"Management",salary:145000,hire_date:"2013-09-01",status:"active",age:50},
+  {employee_id:"E082",name:"Mia Turner",department:"Marketing",salary:80000,hire_date:"2022-10-05",status:"active",age:25},
+  {employee_id:"E091",name:"Noah Adams",department:"Engineering",salary:98000,hire_date:"2023-08-14",status:"active",age:23},
+];
+
+// ── UI HELPERS ──
+function useChip(el){document.getElementById('queryInput').value=el.textContent;}
+function setNav(el){document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));el.classList.add('active');}
+function selectColl(el,name){
+  document.querySelectorAll('.collection-item').forEach(c=>c.classList.remove('active-coll'));
+  el.classList.add('active-coll');
+  activeColl=name;
+  document.getElementById('activeColl').textContent=name;
+  document.getElementById('headerColl').textContent=name;
+}
+function selectOp(el){document.querySelectorAll('.op-btn').forEach(b=>b.classList.remove('active-op'));el.classList.add('active-op');}
 function clearQuery(){
   document.getElementById('queryInput').value='';
   document.getElementById('emptyState').style.display='block';
   document.getElementById('results').style.display='none';
   document.getElementById('loadingState').style.display='none';
 }
-function setNav(el){
-  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
-  el.classList.add('active');
-}
-function selectColl(el, name){
-  document.querySelectorAll('.collection-item').forEach(c=>c.classList.remove('active-coll'));
-  el.classList.add('active-coll');
-  activeColl = name;
-  document.getElementById('activeColl').textContent = name;
-  document.getElementById('headerColl').textContent = name;
-}
-function selectOp(el){
-  document.querySelectorAll('.op-btn').forEach(b=>b.classList.remove('active-op'));
-  el.classList.add('active-op');
-  activeOp = el.textContent;
-}
 function copyQuery(){
-  const txt = document.getElementById('queryOutput').innerText;
-  navigator.clipboard.writeText(txt).catch(()=>{});
-  const btn = document.querySelector('.qb-copy');
-  btn.textContent='✓ Copied';
-  setTimeout(()=>btn.textContent='📋 Copy',1500);
+  navigator.clipboard.writeText(document.getElementById('queryOutput').innerText).catch(()=>{});
+  const b=document.querySelector('.qb-copy');b.textContent='✓ Copied';setTimeout(()=>b.textContent='📋 Copy',1500);
 }
+function switchTab(tab,el){
+  document.querySelectorAll('.air-tab').forEach(t=>t.classList.remove('active-tab'));el.classList.add('active-tab');
+  document.getElementById('tabTable').style.display=tab==='table'?'block':'none';
+  document.getElementById('tabJson').style.display=tab==='json'?'block':'none';
+  document.getElementById('tabSummary').style.display=tab==='summary'?'block':'none';
+}
+function exportResults(){
+  const blob=new Blob([JSON.stringify(currentResultDocs,null,2)],{type:'application/json'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='query_results.json';a.click();
+}
+function addLog(type,msg){
+  const lb=document.getElementById('logBody');
+  const div=document.createElement('div');
+  div.className='log-line';
+  div.innerHTML=`<span class="lg-time">${new Date().toTimeString().slice(0,8)}</span><span class="lg-${type}">[${type.toUpperCase()}]</span><span class="lg-msg">${msg}</span>`;
+  lb.appendChild(div);lb.scrollTop=lb.scrollHeight;
+}
+async function sleep(ms){return new Promise(r=>setTimeout(r,ms));}
 
-// ── DRAG DROP ──
+// ── FILE UPLOAD ──
 function handleDragOver(e){e.preventDefault();document.getElementById('uploadZone').classList.add('drag-over');}
-function handleDragLeave(e){document.getElementById('uploadZone').classList.remove('drag-over');}
-function handleDrop(e){
-  e.preventDefault();
-  document.getElementById('uploadZone').classList.remove('drag-over');
-  const f=e.dataTransfer.files[0];
-  if(f) processFile(f);
-}
-function handleFileSelect(e){ const f=e.target.files[0]; if(f) processFile(f); }
-
+function handleDragLeave(){document.getElementById('uploadZone').classList.remove('drag-over');}
+function handleDrop(e){e.preventDefault();document.getElementById('uploadZone').classList.remove('drag-over');const f=e.dataTransfer.files[0];if(f)processFile(f);}
+function handleFileSelect(e){const f=e.target.files[0];if(f)processFile(f);}
 function processFile(file){
   const ext=file.name.split('.').pop().toLowerCase();
-  if(!['csv','tsv','json','xlsx','xls'].includes(ext)){ alert('Unsupported format.'); return; }
-  const prog=document.getElementById('uploadProgress');
-  const fill=document.getElementById('progFill');
-  const label=document.getElementById('progLabel');
-  prog.style.display='block'; fill.style.width='0%'; label.textContent='Reading...';
-  let pct=0;
-  const iv=setInterval(()=>{pct=Math.min(pct+Math.random()*30,90);fill.style.width=pct+'%';},70);
+  if(!['csv','tsv','json','xlsx','xls'].includes(ext)){alert('Unsupported format.');return;}
+  const prog=document.getElementById('uploadProgress'),fill=document.getElementById('progFill'),lbl=document.getElementById('progLabel');
+  prog.style.display='block';fill.style.width='0%';lbl.textContent='Reading...';
+  let pct=0;const iv=setInterval(()=>{pct=Math.min(pct+Math.random()*30,90);fill.style.width=pct+'%';},70);
   const reader=new FileReader();
   reader.onload=(e)=>{
-    clearInterval(iv); fill.style.width='100%'; label.textContent='Mapping schema...';
+    clearInterval(iv);fill.style.width='100%';lbl.textContent='Mapping schema...';
     setTimeout(()=>{
       prog.style.display='none';
       let parsed;
       try{
-        if(ext==='json') parsed=parseJSON(e.target.result);
-        else if(ext==='csv'||ext==='tsv') parsed=parseCSV(e.target.result,ext==='tsv'?'\t':',');
-        else parsed={headers:['[XLSX — preview N/A]'],rows:[],rowCount:'?'};
-      }catch(err){ parsed={headers:['error'],rows:[[err.message]],rowCount:0}; }
-      const sz=file.size>1024*1024?(file.size/(1024*1024)).toFixed(1)+' MB':(file.size/1024).toFixed(1)+' KB';
-      uploadedFile={ name:file.name, size:sz, ext:ext.toUpperCase(), rows:parsed.rowCount, cols:parsed.headers.length, headers:parsed.headers, preview:parsed.rows.slice(0,5) };
+        if(ext==='json')parsed=parseJSON(e.target.result);
+        else if(ext==='csv'||ext==='tsv')parsed=parseCSV(e.target.result,ext==='tsv'?'\t':',');
+        else parsed={headers:['[XLSX]'],rows:[],rowCount:'?',docs:[]};
+      }catch(err){parsed={headers:['error'],rows:[[err.message]],rowCount:0,docs:[]};}
+      const sz=file.size>1048576?(file.size/1048576).toFixed(1)+' MB':(file.size/1024).toFixed(1)+' KB';
+      uploadedFile={name:file.name,size:sz,ext:ext.toUpperCase(),rows:parsed.rowCount,cols:parsed.headers.length,headers:parsed.headers,preview:parsed.rows.slice(0,5),docs:parsed.docs};
       showFileLoaded();
     },300);
   };
-  if(ext==='xlsx'||ext==='xls') reader.readAsArrayBuffer(file);
-  else reader.readAsText(file);
+  if(ext==='xlsx'||ext==='xls')reader.readAsArrayBuffer(file);else reader.readAsText(file);
 }
-
 function parseCSV(text,delim=','){
   const lines=text.trim().split('\n').filter(l=>l.trim());
-  if(!lines.length) return{headers:[],rows:[],rowCount:0};
+  if(!lines.length)return{headers:[],rows:[],rowCount:0,docs:[]};
   const headers=lines[0].split(delim).map(h=>h.trim().replace(/^"|"$/g,''));
   const rows=lines.slice(1).map(l=>l.split(delim).map(c=>c.trim().replace(/^"|"$/g,'')));
-  return{headers,rows,rowCount:rows.length};
+  const docs=rows.map(r=>{const o={};headers.forEach((h,i)=>{const v=r[i]||'';o[h]=v!==''&&!isNaN(v)?Number(v):v;});return o;});
+  return{headers,rows,rowCount:rows.length,docs};
 }
 function parseJSON(text){
   const data=JSON.parse(text);
   const arr=Array.isArray(data)?data:(data.data||data.records||Object.values(data)[0]||[]);
-  if(!arr.length) return{headers:[],rows:[],rowCount:0};
+  if(!arr.length)return{headers:[],rows:[],rowCount:0,docs:[]};
   const headers=Object.keys(arr[0]);
   const rows=arr.map(obj=>headers.map(h=>String(obj[h]??'')));
-  return{headers,rows,rowCount:rows.length};
+  return{headers,rows,rowCount:rows.length,docs:arr};
 }
-
 function showFileLoaded(){
   const fd=uploadedFile;
   document.getElementById('flName').textContent=fd.name;
   document.getElementById('flMeta').textContent=`${fd.ext} · ${fd.rows} docs · ${fd.cols} fields · ${fd.size}`;
   document.getElementById('fileLoaded').style.display='block';
-  // preview table
   const prev=document.getElementById('flPreviewData');
   if(fd.preview&&fd.preview.length){
     let html='<table><thead><tr>'+fd.headers.map(h=>`<th>${h}</th>`).join('')+'</tr></thead><tbody>';
-    fd.preview.forEach(row=>{ html+='<tr>'+row.map(c=>`<td>${c}</td>`).join('')+'</tr>'; });
+    fd.preview.forEach(r=>{html+='<tr>'+r.map(c=>`<td>${c}</td>`).join('')+'</tr>';});
     prev.innerHTML=html+'</tbody></table>';
-  } else { prev.innerHTML='<span style="color:var(--muted)">No preview available</span>'; }
-  // update collection name
+  }
   const collName=fd.name.replace(/\.[^.]+$/,'').replace(/[^a-zA-Z0-9_]/g,'_');
+  activeColl=collName;
   document.getElementById('activeColl').textContent=collName;
   document.getElementById('headerColl').textContent=collName;
   document.getElementById('dbName').textContent='uploadedDB';
   document.getElementById('dbMeta').textContent=`1 collection · ${fd.rows} docs`;
-  // banner
   document.getElementById('dsBanner').style.display='flex';
   document.getElementById('dsFileName').textContent=fd.name;
   document.getElementById('dsRows').textContent=fd.rows+' docs';
-  // update chips
   if(fd.headers&&fd.headers.length){
-    const f=fd.headers[0]||'field', f2=fd.headers[1]||fd.headers[0]||'field';
-    const defaults=[`Find all by ${f}`,`Top 5 by ${f2}`,`Count by ${f}`,`Group by ${f2}`,`Average of ${f2}`];
-    document.querySelectorAll('.chip').forEach((c,i)=>{ if(defaults[i]) c.textContent=defaults[i]; });
+    const f=fd.headers[0],f2=fd.headers[1]||f;
+    const chips=[`Find all by ${f}`,`Top 5 by ${f2}`,`Count by ${f}`,`Group by ${f2}`,`Average of ${f2}`];
+    document.querySelectorAll('.chip').forEach((c,i)=>{if(chips[i])c.textContent=chips[i];});
   }
 }
-
 function togglePreview(){
   previewOpen=!previewOpen;
   document.getElementById('flPreviewData').style.display=previewOpen?'block':'none';
-  document.getElementById('flPreviewBtn').textContent=previewOpen?'▴ HIDE DOCUMENTS':'▾ PREVIEW DOCUMENTS';
+  document.getElementById('flPreviewBtn').textContent=previewOpen?'▴ HIDE':'▾ PREVIEW';
 }
 function removeFile(){
-  uploadedFile=null; previewOpen=false;
-  document.getElementById('fileLoaded').style.display='none';
-  document.getElementById('flPreviewData').style.display='none';
-  document.getElementById('flPreviewBtn').textContent='▾ PREVIEW DOCUMENTS';
+  uploadedFile=null;previewOpen=false;
+  ['fileLoaded','flPreviewData'].forEach(id=>document.getElementById(id).style.display='none');
   document.getElementById('fileInput').value='';
   document.getElementById('dsBanner').style.display='none';
+  activeColl='employees';
   document.getElementById('activeColl').textContent='employees';
   document.getElementById('headerColl').textContent='employees';
   document.getElementById('dbName').textContent='myDatabase';
   document.getElementById('dbMeta').textContent='4 collections · 6,420 docs';
-  const defaults=['Find all employees in Sales','Top 5 highest paid','Count by department','Hired after 2020','Average salary per dept'];
-  document.querySelectorAll('.chip').forEach((c,i)=>{ if(defaults[i]) c.textContent=defaults[i]; });
+  const def=['Find all employees in Sales','Top 5 highest paid','Count by department','Hired after 2020','Average salary per dept'];
+  document.querySelectorAll('.chip').forEach((c,i)=>{if(def[i])c.textContent=def[i];});
 }
 
-// ── LOGGING ──
-function addLog(type,msg){
-  const lb=document.getElementById('logBody');
-  const time=new Date().toTimeString().slice(0,8);
-  const div=document.createElement('div');
-  div.className='log-line';
-  div.innerHTML=`<span class="lg-time">${time}</span><span class="lg-${type}">[${type.toUpperCase()}]</span><span class="lg-msg">${msg}</span>`;
-  lb.appendChild(div); lb.scrollTop=lb.scrollHeight;
+// ── TABLE RENDER ──
+function renderTable(docs,page=0){
+  const start=page*PAGE_SIZE,end=Math.min(start+PAGE_SIZE,docs.length);
+  const pageDocs=docs.slice(start,end);
+  if(!pageDocs.length){
+    document.getElementById('tableHead').innerHTML='';
+    document.getElementById('tableBody').innerHTML='<tr><td style="color:var(--muted);text-align:center;padding:28px;font-family:JetBrains Mono,monospace;font-size:12px;" colspan="99">No documents matched</td></tr>';
+    document.getElementById('pageInfo').textContent='0 documents';
+    document.getElementById('pageBtns').innerHTML='';
+    return;
+  }
+  const keys=Object.keys(pageDocs[0]);
+  document.getElementById('tableHead').innerHTML='<tr>'+keys.map(k=>`<th>${k}</th>`).join('')+'</tr>';
+  const tbody=document.getElementById('tableBody');tbody.innerHTML='';
+  pageDocs.forEach(doc=>{
+    const tr=document.createElement('tr');
+    tr.innerHTML=keys.map(k=>{
+      const v=doc[k];
+      if(v===null||v===undefined)return`<td><span style="color:var(--muted)">null</span></td>`;
+      if(typeof v==='object')return`<td><span style="color:var(--muted);font-size:10px;">{...}</span></td>`;
+      const s=String(v);
+      if(s==='active')return`<td><span class="badge badge-green">active</span></td>`;
+      if(s==='inactive')return`<td><span class="badge badge-red">inactive</span></td>`;
+      if(s==='on-leave')return`<td><span class="badge badge-amber">on-leave</span></td>`;
+      if(s==='true'||v===true)return`<td><span class="badge badge-blue">true</span></td>`;
+      if(s==='false'||v===false)return`<td><span class="badge badge-red">false</span></td>`;
+      return`<td>${s}</td>`;
+    }).join('');
+    tbody.appendChild(tr);
+  });
+  document.getElementById('pageInfo').textContent=`Showing ${start+1}–${end} of ${docs.length} docs`;
+  const total=Math.ceil(docs.length/PAGE_SIZE);
+  document.getElementById('pageBtns').innerHTML=Array.from({length:total},(_,i)=>`<button class="page-btn${i===page?' active-page':''}" onclick="renderTable(currentResultDocs,${i})">${i+1}</button>`).join('');
 }
 
-async function sleep(ms){ return new Promise(r=>setTimeout(r,ms)); }
+// ── JSON RENDER ──
+function renderJSON(docs){
+  const str=JSON.stringify(docs.slice(0,30),null,2);
+  document.getElementById('jsonView').innerHTML=str
+    .replace(/("[\w$_][\w\d$_]*")\s*:/g,'<span class="json-key">$1</span>:')
+    .replace(/:\s*("(?:[^"\\]|\\.)*")/g,(m,s)=>`: <span class="json-str">${s}</span>`)
+    .replace(/:\s*(-?\d+\.?\d*)/g,(m,n)=>`: <span class="json-num">${n}</span>`)
+    .replace(/:\s*(true|false)/g,(m,b)=>`: <span class="json-bool">${b}</span>`)
+    .replace(/:\s*(null)/g,`: <span class="json-null">null</span>`)
+    .replace(/([{}\[\]])/g,'<span class="json-bracket">$1</span>');
+}
 
-// ── RUN QUERY ──
+// ── LOCAL FALLBACK ──
+function localExecute(query,data,coll){
+  const q=query.toLowerCase();let results=[...data];
+  const depts=['sales','engineering','finance','marketing','operations','management'];
+  for(const d of depts){if(q.includes(d)){results=results.filter(r=>(r.department||'').toLowerCase()===d);break;}}
+  if(q.includes('active')&&!q.includes('inactive'))results=results.filter(r=>r.status==='active');
+  if(q.includes('inactive'))results=results.filter(r=>r.status==='inactive');
+  if(q.includes('on-leave')||q.includes('leave'))results=results.filter(r=>r.status==='on-leave');
+  const yr=q.match(/after (\d{4})/);if(yr)results=results.filter(r=>(r.hire_date||'')>yr[1]);
+  const salOver=q.match(/salary\s*(?:over|above|greater|>)\s*(\d+)/);if(salOver)results=results.filter(r=>(r.salary||0)>parseInt(salOver[1]));
+  const salUnder=q.match(/salary\s*(?:under|below|less|<)\s*(\d+)/);if(salUnder)results=results.filter(r=>(r.salary||0)<parseInt(salUnder[1]));
+  if(q.includes('highest paid')||q.includes('top salary'))results.sort((a,b)=>(b.salary||0)-(a.salary||0));
+  if(q.includes('lowest paid'))results.sort((a,b)=>(a.salary||0)-(b.salary||0));
+  if(q.includes('newest')||q.includes('recently hired'))results.sort((a,b)=>b.hire_date>a.hire_date?1:-1);
+  const topM=q.match(/top\s+(\d+)/);if(topM)results=results.slice(0,parseInt(topM[1]));
+  // aggregations
+  let method='find()';
+  if(q.includes('count by')||q.includes('group by dept')){
+    const g={};data.forEach(d=>{const k=d.department||'Unknown';g[k]=(g[k]||0)+1;});
+    results=Object.entries(g).map(([_id,count])=>({_id,count})).sort((a,b)=>b.count-a.count);
+    method='aggregate()';
+  }
+  if(q.includes('average salary')||q.includes('avg salary')){
+    const g={},ct={};
+    data.forEach(d=>{const k=d.department||'Unknown';g[k]=(g[k]||0)+(d.salary||0);ct[k]=(ct[k]||0)+1;});
+    results=Object.entries(g).map(([_id,t])=>({_id,avg_salary:Math.round(t/ct[_id]),count:ct[_id]})).sort((a,b)=>b.avg_salary-a.avg_salary);
+    method='aggregate()';
+  }
+  const isAgg=method.startsWith('agg');
+  return{
+    mongo_query:`db.${coll}.${isAgg?`aggregate([{ $group: { _id: "$department", ... } }, { $sort: {...} }])`:`find({${[...depts.filter(d=>q.includes(d)).map(d=>`department:"${d.charAt(0).toUpperCase()+d.slice(1)}"`)].join(', ')}}).sort({salary:-1})`}`,
+    method,
+    index:results.length<data.length?'IXSCAN':'COLLSCAN',
+    results,
+    summary:`Found **${results.length}** document${results.length!==1?'s':''} from the \`${coll}\` collection (${data.length} total). ${results.length>0&&results[0].salary?`Salary range in results: $${Math.min(...results.filter(r=>r.salary).map(r=>r.salary)).toLocaleString()} – $${Math.max(...results.filter(r=>r.salary).map(r=>r.salary)).toLocaleString()}.`:''}`
+  };
+}
+
+// ── MAIN QUERY RUNNER ──
 async function runQuery(){
   const raw=document.getElementById('queryInput').value.trim();
-  if(!raw) return;
-
+  if(!raw)return;
   document.getElementById('emptyState').style.display='none';
   document.getElementById('results').style.display='none';
-  const loading=document.getElementById('loadingState');
-  loading.style.display='flex';
-
-  const steps=[
-    "Tokenizing input...",
-    "Detecting intent and operators...",
-    "Mapping to collection schema...",
-    "Generating MongoDB query...",
-    "Optimizing with index hints...",
-    "Executing on database..."
-  ];
-  for(const s of steps){
-    document.getElementById('loadingMsg').textContent=s;
-    await sleep(190);
+  document.getElementById('loadingState').style.display='flex';
+  // reset pipeline
+  for(let i=1;i<=6;i++){const p=document.getElementById('ps'+i);p.className='ps';p.querySelector('.ps-icon').textContent='○';}
+  const steps=["Tokenizing input...","Detecting intent...","Mapping schema...","Generating MongoDB query...","Executing on dataset...","Building results..."];
+  for(let i=0;i<steps.length;i++){
+    document.getElementById('loadingMsg').textContent=steps[i];
+    const p=document.getElementById('ps'+(i+1));p.className='ps active';p.querySelector('.ps-icon').textContent='⟳';
+    await sleep(200);
+    p.className='ps done';p.querySelector('.ps-icon').textContent='✓';
   }
-  loading.style.display='none';
-
-  // Match query
-  const k=norm(raw);
-  let qd=null;
-  for(const key of Object.keys(QUERIES)){
-    if(k.includes(norm(key))||norm(key).split(' ').filter(w=>w.length>3).every(w=>k.includes(w))){
-      qd=QUERIES[key]; break;
-    }
-  }
-  if(!qd) qd=QUERIES["count by department"];
-
-  // Swap collection name if file uploaded
-  let codeHtml=qd.code;
-  const coll=activeColl;
-  codeHtml=codeHtml.replace(/employees/g, coll);
-
+  document.getElementById('loadingState').style.display='none';
   document.getElementById('results').style.display='block';
-  document.getElementById('qbMethod').textContent=qd.method;
-  document.getElementById('qbOperation').textContent=qd.operation.replace('employees',coll);
-  document.getElementById('queryOutput').innerHTML=codeHtml;
-  document.getElementById('statDocs').textContent=uploadedFile?uploadedFile.rows:qd.docs;
-  document.getElementById('statConf').textContent=qd.conf;
-  document.getElementById('statTime').textContent=qd.time;
-  document.getElementById('statIndex').textContent=qd.index;
-
-  // Table
-  const thead=document.getElementById('tableHead');
-  const tbody=document.getElementById('tableBody');
-  if(uploadedFile&&uploadedFile.preview.length){
-    thead.innerHTML='<tr>'+uploadedFile.headers.map(h=>`<th>${h}</th>`).join('')+'</tr>';
-    tbody.innerHTML='';
-    uploadedFile.preview.forEach(row=>{
-      const tr=document.createElement('tr');
-      tr.innerHTML=row.map(c=>`<td>${c}</td>`).join('');
-      tbody.appendChild(tr);
-    });
-    document.getElementById('tableCount').textContent=uploadedFile.rows+' documents (preview: 5)';
-  } else {
-    thead.innerHTML='<tr>'+qd.headers.map(h=>`<th>${h}</th>`).join('')+'</tr>';
-    tbody.innerHTML='';
-    qd.data.forEach(row=>{
-      const tr=document.createElement('tr');
-      tr.innerHTML=row.map((cell,ci)=>{
-        if(qd.badges[ci]){
-          const bk=qd.badges[ci][cell]||'green';
-          return`<td><span class="badge badge-${bk}">${cell}</span></td>`;
-        }
-        return`<td>${cell}</td>`;
-      }).join('');
-      tbody.appendChild(tr);
-    });
-    document.getElementById('tableCount').textContent=qd.docs+' documents';
-  }
-
-  // Update method counts
-  if(qd.method.startsWith('aggregate')) methodCounts.aggregate++;
-  else if(qd.method.startsWith('find')) methodCounts.find++;
-
-  buildCharts();
-
-  // Logs
   document.getElementById('logBody').innerHTML='';
-  const src=uploadedFile?uploadedFile.name:coll+' collection';
-  const logs=[
-    ['info',`Query: "${raw.slice(0,55)}"`],
-    ['info',`Collection: ${coll} | Source: ${src}`],
-    ['info',`Operation detected: ${qd.method}`],
-    ['success',`Query generated (confidence: ${qd.conf})`],
-    ['info',`Index scan: ${qd.index}`],
-    ['success',`Executed in ${qd.time} — ${uploadedFile?uploadedFile.rows:qd.docs} documents returned`],
-  ];
-  for(const [t,m] of logs) addLog(t,m);
+  document.getElementById('airLoading').style.display='flex';
+  addLog('info',`Query: "${raw.slice(0,60)}"`);
+  addLog('info',`Collection: ${activeColl} · Source: ${uploadedFile?uploadedFile.name:'built-in dataset (35 docs)'}`);
+  addLog('info','Calling Claude AI for query generation + execution...');
 
-  for(let i=1;i<=6;i++){
-    document.getElementById('ps'+i).className='ps done';
-    document.getElementById('ps'+i).querySelector('.ps-icon').textContent='✓';
+  const dataset=uploadedFile?uploadedFile.docs:DEFAULT_DATA;
+  const t0=Date.now();
+  let aiResult=null;
+
+  try{
+    const resp=await fetch("https://api.anthropic.com/v1/messages",{
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({
+        model:"claude-sonnet-4-20250514",
+        max_tokens:2500,
+        system:`You are a MongoDB query execution engine. Given a natural language request and a JSON dataset, you must:
+1. Write the correct MongoDB query
+2. Mentally execute it against the provided data — actually filter, sort, group, or transform the documents
+3. Return the real matching/computed result documents
+4. Write a plain-English summary
+
+Respond with ONLY valid JSON (no markdown, no backticks, no extra text):
+{
+  "mongo_query": "the full db.collection.find({}) or aggregate([...]) query string",
+  "method": "find() or aggregate()",
+  "index": "IXSCAN or COLLSCAN",
+  "results": [ ... actual result documents ... ],
+  "summary": "Plain English explanation of results"
+}`,
+        messages:[{role:"user",content:`Natural language: "${raw}"\nCollection: ${activeColl}\nDataset (${dataset.length} docs):\n${JSON.stringify(dataset.slice(0,120))}`}]
+      })
+    });
+    const d=await resp.json();
+    const txt=d.content?.map(c=>c.text||'').join('')||'';
+    aiResult=JSON.parse(txt.replace(/```json|```/g,'').trim());
+    document.getElementById('resultBadge').textContent='Claude AI';
+    addLog('success',`Claude AI returned ${aiResult.results?.length||0} documents`);
+  }catch(err){
+    addLog('warn',`AI unavailable (${err.message.slice(0,40)}) — using local engine`);
+    aiResult=localExecute(raw,dataset,activeColl);
+    document.getElementById('resultBadge').textContent='Local Engine';
+    addLog('success',`Local engine: ${aiResult.results.length} documents`);
   }
+
+  const execMs=Date.now()-t0;
+  document.getElementById('airLoading').style.display='none';
+  currentResultDocs=aiResult.results||[];
+  const numFields=currentResultDocs.length>0?Object.keys(currentResultDocs[0]).length:0;
+
+  // Stats
+  document.getElementById('statDocs').textContent=currentResultDocs.length;
+  document.getElementById('statFields').textContent=numFields;
+  document.getElementById('statTime').textContent=execMs+'ms';
+  document.getElementById('statIndex').textContent=aiResult.index||'COLLSCAN';
+
+  // Query display
+  document.getElementById('qbMethod').textContent=aiResult.method||'find()';
+  document.getElementById('qbOperation').textContent=(aiResult.mongo_query||`db.${activeColl}.find(...)`).slice(0,72);
+  document.getElementById('queryOutput').textContent=aiResult.mongo_query||'// Generated by Claude AI';
+
+  // Render all views
+  renderTable(currentResultDocs,0);
+  renderJSON(currentResultDocs);
+
+  // Summary
+  const salaries=currentResultDocs.filter(d=>d.salary).map(d=>d.salary);
+  const avgSal=salaries.length?Math.round(salaries.reduce((a,b)=>a+b,0)/salaries.length):null;
+  const summaryText=aiResult.summary||`Found ${currentResultDocs.length} documents.`;
+  document.getElementById('summaryView').innerHTML=`
+    <div style="display:flex;gap:12px;align-items:flex-start;margin-bottom:18px;">
+      <span style="font-size:28px;flex-shrink:0;">✦</span>
+      <div>
+        <div style="font-size:12px;font-weight:700;color:var(--mg-green);font-family:'JetBrains Mono',monospace;letter-spacing:1px;margin-bottom:6px;">AI RESULT SUMMARY</div>
+        <div style="font-size:13px;color:var(--text);line-height:1.8;">${summaryText.replace(/\*\*(.*?)\*\*/g,'<strong style="color:var(--mg-green)">$1</strong>').replace(/\`(.*?)\`/g,'<code style="background:rgba(0,237,100,0.1);color:var(--mg-green);padding:1px 5px;border-radius:3px;font-family:JetBrains Mono,monospace;font-size:11px;">$1</code>')}</div>
+      </div>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;">
+      <div style="background:rgba(0,237,100,0.06);border:1px solid rgba(0,237,100,0.15);border-radius:8px;padding:14px;">
+        <div style="font-size:9px;color:var(--muted);font-weight:700;letter-spacing:1.5px;margin-bottom:4px;">DOCS MATCHED</div>
+        <div style="font-size:26px;font-weight:900;color:var(--mg-green);">${currentResultDocs.length}</div>
+        <div style="font-size:10px;color:var(--muted);font-family:'JetBrains Mono',monospace;">of ${dataset.length} total</div>
+      </div>
+      <div style="background:rgba(150,208,255,0.06);border:1px solid rgba(150,208,255,0.15);border-radius:8px;padding:14px;">
+        <div style="font-size:9px;color:var(--muted);font-weight:700;letter-spacing:1.5px;margin-bottom:4px;">FIELDS</div>
+        <div style="font-size:26px;font-weight:900;color:#96d0ff;">${numFields}</div>
+        <div style="font-size:10px;color:var(--muted);font-family:'JetBrains Mono',monospace;">per document</div>
+      </div>
+      <div style="background:rgba(245,158,11,0.06);border:1px solid rgba(245,158,11,0.15);border-radius:8px;padding:14px;">
+        <div style="font-size:9px;color:var(--muted);font-weight:700;letter-spacing:1.5px;margin-bottom:4px;">${avgSal?'AVG SALARY':'EXEC TIME'}</div>
+        <div style="font-size:26px;font-weight:900;color:var(--amber);">${avgSal?'$'+avgSal.toLocaleString():execMs+'ms'}</div>
+        <div style="font-size:10px;color:var(--muted);font-family:'JetBrains Mono',monospace;">${avgSal?'across results':'query runtime'}</div>
+      </div>
+    </div>`;
+
+  // Charts
+  if((aiResult.method||'').startsWith('aggregate'))methodCounts.aggregate++;else methodCounts.find++;
+  timeHistory.push(execMs);timeHistory.shift();
+  buildCharts();
+  addLog('success',`Done — ${currentResultDocs.length} docs · ${numFields} fields · ${execMs}ms`);
   document.getElementById('content').scrollTop=0;
-  timeHistory.push(parseInt(qd.time));
-  timeHistory.shift();
 }
 
 function buildCharts(){
   Chart.defaults.color='#7d8590';
   Chart.defaults.font.family="'JetBrains Mono', monospace";
   Chart.defaults.font.size=10;
-  if(modelChart) modelChart.destroy();
-  if(timeChart) timeChart.destroy();
+  if(modelChart)modelChart.destroy();
+  if(timeChart)timeChart.destroy();
   const gc='rgba(48,54,61,0.7)';
-
   modelChart=new Chart(document.getElementById('methodChart'),{
     type:'doughnut',
-    data:{
-      labels:['find()','aggregate()','insert()','update()'],
-      datasets:[{
-        data:[methodCounts.find,methodCounts.aggregate,methodCounts.insert,methodCounts.update],
-        backgroundColor:['rgba(0,237,100,0.7)','rgba(150,208,255,0.7)','rgba(245,158,11,0.7)','rgba(220,189,251,0.7)'],
-        borderColor:['#00ed64','#96d0ff','#f59e0b','#dcbdfb'],
-        borderWidth:1,
-      }]
-    },
-    options:{
-      responsive:true, maintainAspectRatio:false,
-      plugins:{
-        legend:{ position:'right', labels:{ boxWidth:10, padding:10 } }
-      },
-      cutout:'62%'
-    }
+    data:{labels:['find()','aggregate()','insert()','update()'],datasets:[{data:[methodCounts.find,methodCounts.aggregate,methodCounts.insert,methodCounts.update],backgroundColor:['rgba(0,237,100,0.7)','rgba(150,208,255,0.7)','rgba(245,158,11,0.7)','rgba(220,189,251,0.7)'],borderColor:['#00ed64','#96d0ff','#f59e0b','#dcbdfb'],borderWidth:1}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'right',labels:{boxWidth:10,padding:10}}},cutout:'62%'}
   });
-
   timeChart=new Chart(document.getElementById('timeChart'),{
     type:'line',
-    data:{
-      labels:timeHistory.map((_,i)=>'Q'+(i+1)),
-      datasets:[{
-        data:timeHistory,
-        borderColor:'#00ed64',
-        backgroundColor:'rgba(0,237,100,0.07)',
-        fill:true, tension:0.4,
-        pointBackgroundColor:'#00ed64',
-        pointRadius:3, borderWidth:2,
-      }]
-    },
-    options:{
-      responsive:true, maintainAspectRatio:false,
-      plugins:{legend:{display:false}},
-      scales:{
-        y:{grid:{color:gc}, ticks:{callback:v=>v+'ms'}},
-        x:{grid:{display:false}}
-      }
-    }
+    data:{labels:timeHistory.map((_,i)=>'Q'+(i+1)),datasets:[{data:timeHistory,borderColor:'#00ed64',backgroundColor:'rgba(0,237,100,0.07)',fill:true,tension:0.4,pointBackgroundColor:'#00ed64',pointRadius:3,borderWidth:2}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{grid:{color:gc},ticks:{callback:v=>v+'ms'}},x:{grid:{display:false}}}}
   });
 }
 
-document.getElementById('queryInput').addEventListener('keydown',e=>{
-  if(e.key==='Enter') runQuery();
-});
+document.getElementById('queryInput').addEventListener('keydown',e=>{if(e.key==='Enter')runQuery();});
 </script>
 </body>
 </html>
