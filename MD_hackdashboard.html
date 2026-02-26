@@ -1,0 +1,656 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NLPQuery – MongoDB</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Rajdhani:wght@500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+:root {
+  --bg: #0d0f14;
+  --sidebar: #111318;
+  --card: #181c24;
+  --card2: #1d2230;
+  --border: #262d3d;
+  --green: #00e5a0;
+  --purple: #7c5af5;
+  --yellow: #f5c842;
+  --red: #f55a5a;
+  --text: #e2e8f0;
+  --muted: #5a6480;
+  --cyan: #00d4ff;
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+body { font-family:'Rajdhani',sans-serif; background:var(--bg); color:var(--text); display:flex; flex-direction:column; height:100vh; overflow:hidden; }
+
+/* HEADER */
+header {
+  display:flex; align-items:center; justify-content:space-between;
+  background:#0a0c10; border-bottom:1px solid var(--border);
+  padding:0 24px; height:56px; flex-shrink:0; z-index:100;
+}
+.logo { display:flex; align-items:center; gap:10px; }
+.logo-icon {
+  width:34px; height:34px; border-radius:10px;
+  background:linear-gradient(135deg,#7c5af5,#00e5a0);
+  display:flex; align-items:center; justify-content:center;
+  font-size:16px;
+}
+.logo-text { font-size:20px; font-weight:700; letter-spacing:1px; }
+.logo-text span:first-child { color:var(--text); }
+.logo-text span:last-child { color:var(--green); }
+.header-right { display:flex; align-items:center; gap:20px; }
+.header-subtitle { font-size:13px; color:var(--muted); letter-spacing:1px; font-family:'JetBrains Mono',monospace; }
+.status { display:flex; align-items:center; gap:6px; font-size:12px; font-family:'JetBrains Mono',monospace; color:var(--green); }
+.status-dot { width:8px; height:8px; border-radius:50%; background:var(--green); animation:pulse 2s infinite; }
+@keyframes pulse { 0%,100%{opacity:1;box-shadow:0 0 0 0 rgba(0,229,160,.4)} 50%{opacity:.7;box-shadow:0 0 0 6px rgba(0,229,160,0)} }
+
+/* LAYOUT */
+.layout { display:flex; flex:1; overflow:hidden; }
+
+/* SIDEBAR */
+aside {
+  width:260px; flex-shrink:0; background:var(--sidebar);
+  border-right:1px solid var(--border); overflow-y:auto;
+  display:flex; flex-direction:column; padding:20px 0;
+}
+.nav-section { padding:0 16px; margin-bottom:24px; }
+.nav-label { font-size:11px; letter-spacing:2px; color:var(--muted); font-family:'JetBrains Mono',monospace; margin-bottom:10px; padding:0 8px; }
+.nav-item {
+  display:flex; align-items:center; gap:10px; padding:10px 12px;
+  border-radius:8px; cursor:pointer; font-size:15px; font-weight:600;
+  color:#8892b0; transition:all .2s; margin-bottom:2px;
+}
+.nav-item:hover { background:rgba(255,255,255,.05); color:var(--text); }
+.nav-item.active { background:rgba(0,229,160,.1); color:var(--green); border:1px solid rgba(0,229,160,.2); }
+.nav-icon { font-size:16px; width:20px; text-align:center; }
+
+.model-item {
+  display:flex; align-items:center; justify-content:space-between;
+  padding:10px 12px; border-radius:8px; border:1px solid var(--border);
+  margin-bottom:8px; font-family:'JetBrains Mono',monospace; font-size:13px;
+  transition:all .2s; cursor:pointer;
+}
+.model-item.active { border-color:var(--green); background:rgba(0,229,160,.05); }
+.model-item:hover { border-color:rgba(255,255,255,.2); }
+.model-dot { width:8px; height:8px; border-radius:50%; }
+.model-acc { font-size:12px; font-weight:700; }
+
+.db-card { background:var(--card); border:1px solid var(--border); border-radius:10px; padding:14px; }
+.db-label { font-size:11px; letter-spacing:2px; color:var(--muted); font-family:'JetBrains Mono',monospace; margin-bottom:6px; }
+.db-name { color:var(--green); font-family:'JetBrains Mono',monospace; font-size:14px; font-weight:700; }
+.db-meta { font-size:12px; color:var(--muted); font-family:'JetBrains Mono',monospace; margin-top:4px; }
+
+/* MAIN */
+main { flex:1; overflow-y:auto; padding:24px; display:flex; flex-direction:column; gap:20px; }
+
+/* QUERY SECTION */
+.query-section { }
+.section-label { font-size:11px; letter-spacing:3px; color:var(--muted); font-family:'JetBrains Mono',monospace; margin-bottom:12px; }
+.query-bar { display:flex; gap:10px; margin-bottom:12px; }
+.query-input {
+  flex:1; background:var(--card); border:1px solid var(--border);
+  border-radius:10px; padding:12px 18px; color:var(--text);
+  font-family:'Rajdhani',sans-serif; font-size:15px; font-weight:500;
+  outline:none; transition:border-color .2s;
+}
+.query-input:focus { border-color:var(--green); }
+.query-input::placeholder { color:var(--muted); }
+.btn-clear {
+  background:var(--card); border:1px solid var(--border); border-radius:10px;
+  color:var(--muted); font-family:'Rajdhani',sans-serif; font-size:14px; font-weight:600;
+  padding:0 18px; cursor:pointer; transition:all .2s;
+}
+.btn-clear:hover { border-color:var(--text); color:var(--text); }
+.btn-run {
+  background:var(--green); border:none; border-radius:10px;
+  color:#0a0c10; font-family:'Rajdhani',sans-serif; font-size:15px; font-weight:700;
+  padding:0 22px; cursor:pointer; display:flex; align-items:center; gap:8px;
+  transition:all .2s; letter-spacing:.5px;
+}
+.btn-run:hover { background:#00ffb3; transform:translateY(-1px); box-shadow:0 4px 20px rgba(0,229,160,.4); }
+.btn-run:active { transform:translateY(0); }
+
+.chips { display:flex; flex-wrap:wrap; gap:8px; }
+.chip {
+  background:var(--card); border:1px solid var(--border); border-radius:20px;
+  padding:6px 14px; font-size:13px; font-weight:600; cursor:pointer;
+  transition:all .2s; color:#8892b0;
+}
+.chip:hover { border-color:var(--green); color:var(--green); background:rgba(0,229,160,.05); }
+
+/* PIPELINE STEPS */
+.pipeline { display:flex; align-items:center; gap:0; margin-bottom:16px; }
+.step {
+  display:flex; align-items:center; gap:6px; padding:8px 16px;
+  border-top:2px solid var(--border); border-bottom:2px solid var(--border);
+  font-size:13px; font-family:'JetBrains Mono',monospace; color:var(--muted);
+  flex:1; justify-content:center; transition:all .3s;
+}
+.step.done { border-color:var(--green); color:var(--green); }
+.step.active { border-color:var(--yellow); color:var(--yellow); animation:blink .8s infinite; }
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:.4} }
+.step-check { font-size:12px; }
+
+/* GENERATED QUERY */
+.query-card { background:var(--card); border:1px solid var(--border); border-radius:12px; padding:18px; }
+.query-card-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:12px; }
+.query-card-title { font-size:13px; letter-spacing:2px; color:var(--green); font-family:'JetBrains Mono',monospace; font-weight:700; }
+.btn-copy {
+  background:transparent; border:1px solid var(--border); border-radius:6px;
+  color:var(--muted); font-size:12px; padding:4px 10px; cursor:pointer;
+  font-family:'JetBrains Mono',monospace; transition:all .2s;
+}
+.btn-copy:hover { border-color:var(--green); color:var(--green); }
+.query-code { font-family:'JetBrains Mono',monospace; font-size:13px; line-height:1.7; white-space:pre-wrap; word-break:break-word; }
+.kw { color:var(--purple); }
+.field { color:var(--cyan); }
+.val { color:var(--yellow); }
+.op { color:var(--green); }
+.str { color:#f0a070; }
+
+/* STATS */
+.stats-row { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; }
+.stat-card {
+  background:var(--card); border:1px solid var(--border); border-radius:12px;
+  padding:16px; transition:border-color .2s;
+}
+.stat-card.highlight { border-color:var(--green); }
+.stat-label { font-size:11px; letter-spacing:2px; color:var(--muted); font-family:'JetBrains Mono',monospace; margin-bottom:8px; }
+.stat-val { font-size:32px; font-weight:700; font-family:'JetBrains Mono',monospace; line-height:1; }
+.stat-sub { font-size:12px; color:var(--muted); font-family:'JetBrains Mono',monospace; margin-top:6px; }
+
+/* CHARTS */
+.charts-row { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+.chart-card { background:var(--card); border:1px solid var(--border); border-radius:12px; padding:20px; }
+.chart-title { font-size:16px; font-weight:700; margin-bottom:4px; }
+.chart-sub { font-size:12px; color:var(--muted); font-family:'JetBrains Mono',monospace; margin-bottom:16px; }
+
+/* RESULTS TABLE */
+.table-card { background:var(--card); border:1px solid var(--border); border-radius:12px; overflow:hidden; }
+.table-header { display:flex; align-items:center; justify-content:space-between; padding:16px 20px; border-bottom:1px solid var(--border); }
+.table-title { font-size:17px; font-weight:700; }
+.table-count { font-size:12px; color:var(--muted); font-family:'JetBrains Mono',monospace; }
+table { width:100%; border-collapse:collapse; }
+th { font-size:11px; letter-spacing:2px; color:var(--muted); font-family:'JetBrains Mono',monospace; text-align:left; padding:10px 20px; border-bottom:1px solid var(--border); }
+td { padding:13px 20px; font-size:14px; font-weight:600; border-bottom:1px solid rgba(38,45,61,.5); }
+tr:last-child td { border-bottom:none; }
+tr:hover td { background:rgba(255,255,255,.02); }
+.badge {
+  display:inline-block; padding:3px 10px; border-radius:20px;
+  font-size:11px; font-weight:700; font-family:'JetBrains Mono',monospace;
+}
+.badge.high { background:rgba(124,90,245,.2); color:var(--purple); border:1px solid rgba(124,90,245,.3); }
+.badge.medium { background:rgba(245,200,66,.15); color:var(--yellow); border:1px solid rgba(245,200,66,.3); }
+.badge.low { background:rgba(245,90,90,.15); color:var(--red); border:1px solid rgba(245,90,90,.3); }
+
+/* LOGS */
+.logs-card { background:var(--card); border:1px solid var(--border); border-radius:12px; overflow:hidden; }
+.logs-header { display:flex; align-items:center; justify-content:space-between; padding:14px 20px; border-bottom:1px solid var(--border); }
+.logs-title { font-size:17px; font-weight:700; }
+.live-badge { display:flex; align-items:center; gap:6px; font-size:12px; color:var(--green); font-family:'JetBrains Mono',monospace; }
+.live-dot { width:7px; height:7px; border-radius:50%; background:var(--green); animation:pulse 1.5s infinite; }
+.logs-body { padding:16px 20px; font-family:'JetBrains Mono',monospace; font-size:12.5px; line-height:2; }
+.log-line { display:flex; gap:14px; }
+.log-time { color:var(--muted); }
+.log-info { color:var(--cyan); }
+.log-success { color:var(--green); }
+.log-warn { color:var(--yellow); }
+.log-text { color:#8892b0; }
+
+/* EMPTY STATE */
+.empty-state { flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:60px; text-align:center; }
+.empty-icon { font-size:64px; margin-bottom:16px; filter:drop-shadow(0 0 20px rgba(0,229,160,.3)); }
+.empty-text { font-size:16px; color:var(--muted); line-height:1.6; font-family:'JetBrains Mono',monospace; }
+
+/* HIDDEN */
+.hidden { display:none !important; }
+
+/* SCROLLBAR */
+::-webkit-scrollbar { width:6px; }
+::-webkit-scrollbar-track { background:transparent; }
+::-webkit-scrollbar-thumb { background:var(--border); border-radius:3px; }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header>
+  <div class="logo">
+    <div class="logo-icon">🔍</div>
+    <div class="logo-text"><span>NLP</span><span>Query</span></div>
+  </div>
+  <div class="header-right">
+    <div class="header-subtitle">AI-Powered Data Retrieval System · MongoDB</div>
+    <div class="status"><div class="status-dot"></div>SYSTEM ONLINE</div>
+  </div>
+</header>
+
+<div class="layout">
+
+  <!-- SIDEBAR -->
+  <aside>
+    <div class="nav-section">
+      <div class="nav-label">NAVIGATION</div>
+      <div class="nav-item active" onclick="setNav(this)"><span class="nav-icon">⚡</span> Query Interface</div>
+      <div class="nav-item" onclick="setNav(this)"><span class="nav-icon">📊</span> Analytics</div>
+      <div class="nav-item" onclick="setNav(this)"><span class="nav-icon">🗄️</span> Database</div>
+      <div class="nav-item" onclick="setNav(this)"><span class="nav-icon">📜</span> Query History</div>
+      <div class="nav-item" onclick="setNav(this)"><span class="nav-icon">⚙️</span> Settings</div>
+    </div>
+
+    <div class="nav-section">
+      <div class="nav-label">ACTIVE MODELS</div>
+      <div class="model-item active">
+        <div style="display:flex;align-items:center;gap:8px">
+          <div class="model-dot" style="background:var(--green)"></div>
+          <span>T5 Text-to-MQL</span>
+        </div>
+        <span class="model-acc" style="color:var(--green)">94.2%</span>
+      </div>
+      <div class="model-item">
+        <div style="display:flex;align-items:center;gap:8px">
+          <div class="model-dot" style="background:var(--purple)"></div>
+          <span>BERT</span>
+        </div>
+        <span class="model-acc" style="color:var(--purple)">91.7%</span>
+      </div>
+      <div class="model-item">
+        <div style="display:flex;align-items:center;gap:8px">
+          <div class="model-dot" style="background:var(--yellow)"></div>
+          <span>Zero-Shot</span>
+        </div>
+        <span class="model-acc" style="color:var(--yellow)">87.3%</span>
+      </div>
+    </div>
+
+    <div class="nav-section">
+      <div class="nav-label">DATABASE</div>
+      <div class="db-card">
+        <div class="db-label">CONNECTED TO</div>
+        <div class="db-name">employees_db</div>
+        <div class="db-meta">MongoDB · 4 collections · 1,240 docs</div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <main id="mainContent">
+
+    <!-- QUERY SECTION -->
+    <div class="query-section">
+      <div class="section-label">NATURAL LANGUAGE QUERY</div>
+      <div class="query-bar">
+        <input class="query-input" id="queryInput" type="text" placeholder="Ask anything in plain English... e.g. Show all employees in Sales department" />
+        <button class="btn-clear" onclick="clearQuery()">Clear</button>
+        <button class="btn-run" onclick="runQuery()">▶ Run Query</button>
+      </div>
+      <div class="chips" id="chips">
+        <div class="chip" onclick="useChip(this)">Show all employees in Sales</div>
+        <div class="chip" onclick="useChip(this)">Top 5 highest paid employees</div>
+        <div class="chip" onclick="useChip(this)">Count employees by department</div>
+        <div class="chip" onclick="useChip(this)">Employees hired after 2020</div>
+        <div class="chip" onclick="useChip(this)">Average salary by department</div>
+      </div>
+    </div>
+
+    <!-- EMPTY STATE (shown before any query) -->
+    <div class="empty-state" id="emptyState">
+      <div class="empty-icon">🔍</div>
+      <div class="empty-text">Enter a natural language query above<br>and the AI will convert it to MongoDB automatically.</div>
+    </div>
+
+    <!-- RESULTS (hidden until query runs) -->
+    <div id="results" class="hidden">
+
+      <!-- PIPELINE -->
+      <div class="pipeline" id="pipeline">
+        <div class="step" id="s1"><span class="step-check">✓</span> Tokenize</div>
+        <div class="step" id="s2"><span class="step-check">✓</span> NER</div>
+        <div class="step" id="s3"><span class="step-check">✓</span> Intent</div>
+        <div class="step" id="s4"><span class="step-check">✓</span> MQL Gen</div>
+        <div class="step" id="s5"><span class="step-check">✓</span> Execute</div>
+        <div class="step" id="s6"><span class="step-check">✓</span> Visualize</div>
+      </div>
+
+      <!-- GENERATED MONGO QUERY -->
+      <div class="query-card">
+        <div class="query-card-header">
+          <span class="query-card-title">GENERATED MONGODB QUERY</span>
+          <button class="btn-copy" onclick="copyQuery()">📋 Copy</button>
+        </div>
+        <div class="query-code" id="generatedQuery"></div>
+      </div>
+
+      <!-- STATS -->
+      <div class="stats-row">
+        <div class="stat-card">
+          <div class="stat-label">DOCS RETRIEVED</div>
+          <div class="stat-val" id="statDocs" style="color:var(--green)">0</div>
+          <div class="stat-sub">result documents</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">CONFIDENCE</div>
+          <div class="stat-val" id="statConf" style="color:var(--purple)">0%</div>
+          <div class="stat-sub">model accuracy</div>
+        </div>
+        <div class="stat-card highlight">
+          <div class="stat-label">EXEC TIME</div>
+          <div class="stat-val" id="statTime" style="color:var(--yellow)">0ms</div>
+          <div class="stat-sub">milliseconds</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">TOKENS</div>
+          <div class="stat-val" id="statTokens" style="color:var(--red)">0</div>
+          <div class="stat-sub">processed</div>
+        </div>
+      </div>
+
+      <!-- CHARTS -->
+      <div class="charts-row">
+        <div class="chart-card">
+          <div class="chart-title">Model Accuracy Comparison</div>
+          <div class="chart-sub">Performance across transformer models</div>
+          <canvas id="barChart" height="180"></canvas>
+        </div>
+        <div class="chart-card">
+          <div class="chart-title">Query Processing Time</div>
+          <div class="chart-sub">Last 10 queries in milliseconds</div>
+          <canvas id="lineChart" height="180"></canvas>
+        </div>
+      </div>
+
+      <!-- RESULTS TABLE -->
+      <div class="table-card">
+        <div class="table-header">
+          <span class="table-title">Query Results</span>
+          <span class="table-count" id="tableCount">0 documents</span>
+        </div>
+        <div id="tableContainer"></div>
+      </div>
+
+      <!-- LOGS -->
+      <div class="logs-card">
+        <div class="logs-header">
+          <span class="logs-title">System Logs</span>
+          <div class="live-badge"><div class="live-dot"></div>LIVE</div>
+        </div>
+        <div class="logs-body" id="logsBody"></div>
+      </div>
+
+    </div>
+
+  </main>
+</div>
+
+<script>
+// ─── DATA ─────────────────────────────────────────────────────────────────────
+const QUERIES = {
+  "Show all employees in Sales": {
+    mql: `<span class="kw">db</span>.<span class="field">employees</span>.<span class="op">find</span>(\n  { <span class="field">department</span>: <span class="str">"Sales"</span> },\n  { <span class="field">_id</span>: <span class="val">0</span>, <span class="field">name</span>: <span class="val">1</span>, <span class="field">email</span>: <span class="val">1</span>, <span class="field">salary</span>: <span class="val">1</span>, <span class="field">hireDate</span>: <span class="val">1</span> }\n)`,
+    docs: 8, conf: "91%", time: "18ms", tokens: 5,
+    headers: ["NAME","EMAIL","SALARY","HIRE DATE","STATUS"],
+    rows: [
+      ["Alice Johnson","alice@corp.com","$79,200","2021-03-15",{badge:"active",cls:"high"}],
+      ["Bob Martinez","bob@corp.com","$84,500","2020-07-22",{badge:"active",cls:"high"}],
+      ["Carol White","carol@corp.com","$71,300","2022-01-10",{badge:"active",cls:"high"}],
+      ["David Brown","david@corp.com","$68,900","2019-11-05",{badge:"senior",cls:"medium"}],
+      ["Eva Green","eva@corp.com","$92,100","2021-09-18",{badge:"active",cls:"high"}],
+      ["Frank Lee","frank@corp.com","$75,400","2023-04-02",{badge:"new",cls:"medium"}],
+      ["Grace Kim","grace@corp.com","$88,000","2020-02-28",{badge:"senior",cls:"medium"}],
+      ["Henry Wu","henry@corp.com","$66,700","2022-08-14",{badge:"active",cls:"high"}],
+    ],
+    logs: [
+      ["INFO","Query received: \"Show all employees in Sales\""],
+      ["INFO","NLP preprocessing complete – 5 tokens"],
+      ["INFO","Intent detected: COLLECTION_FILTER"],
+      ["SUCCESS","MQL generated by T5 model (conf: 91%)"],
+      ["SUCCESS","Query executed in 18ms – 8 documents returned"],
+      ["SUCCESS","Results rendered successfully"],
+    ]
+  },
+  "Top 5 highest paid employees": {
+    mql: `<span class="kw">db</span>.<span class="field">employees</span>.<span class="op">find</span>(\n  {},\n  { <span class="field">name</span>: <span class="val">1</span>, <span class="field">department</span>: <span class="val">1</span>, <span class="field">salary</span>: <span class="val">1</span> }\n).<span class="op">sort</span>({ <span class="field">salary</span>: <span class="val">-1</span> }).<span class="op">limit</span>(<span class="val">5</span>)`,
+    docs: 5, conf: "96%", time: "12ms", tokens: 6,
+    headers: ["NAME","DEPARTMENT","SALARY","RANK"],
+    rows: [
+      ["Sarah Connor","Management","$145,000",{badge:"#1",cls:"high"}],
+      ["James Wilson","Engineering","$138,500",{badge:"#2",cls:"high"}],
+      ["Linda Park","Engineering","$132,000",{badge:"#3",cls:"high"}],
+      ["Tom Bradley","Finance","$121,000",{badge:"#4",cls:"medium"}],
+      ["Nina Patel","Management","$119,800",{badge:"#5",cls:"medium"}],
+    ],
+    logs: [
+      ["INFO","Query received: \"Top 5 highest paid employees\""],
+      ["INFO","NLP preprocessing complete – 6 tokens"],
+      ["INFO","Intent detected: SORT_LIMIT"],
+      ["SUCCESS","MQL generated by T5 model (conf: 96%)"],
+      ["SUCCESS","Query executed in 12ms – 5 documents returned"],
+      ["SUCCESS","Results rendered successfully"],
+    ]
+  },
+  "Count employees by department": {
+    mql: `<span class="kw">db</span>.<span class="field">employees</span>.<span class="op">aggregate</span>([\n  { <span class="kw">$group</span>: { <span class="field">_id</span>: <span class="str">"$department"</span>, <span class="field">count</span>: { <span class="kw">$sum</span>: <span class="val">1</span> } } },\n  { <span class="kw">$sort</span>: { <span class="field">count</span>: <span class="val">-1</span> } },\n  { <span class="kw">$project</span>: { <span class="field">department</span>: <span class="str">"$_id"</span>, <span class="field">count</span>: <span class="val">1</span>, <span class="field">_id</span>: <span class="val">0</span> } }\n])`,
+    docs: 6, conf: "94%", time: "21ms", tokens: 4,
+    headers: ["DEPARTMENT","EMPLOYEE COUNT","PERCENTAGE","SIZE"],
+    rows: [
+      ["Engineering","287","23.1%",{badge:"Large",cls:"high"}],
+      ["Sales","241","19.4%",{badge:"Large",cls:"high"}],
+      ["Operations","198","15.9%",{badge:"Medium",cls:"medium"}],
+      ["Finance","176","14.2%",{badge:"Medium",cls:"medium"}],
+      ["Marketing","164","13.2%",{badge:"Medium",cls:"medium"}],
+      ["Management","174","14.0%",{badge:"Medium",cls:"medium"}],
+    ],
+    logs: [
+      ["INFO","Query received: \"Count employees by department\""],
+      ["INFO","NLP preprocessing complete – 4 tokens"],
+      ["INFO","Intent detected: AGGREGATION_GROUP"],
+      ["SUCCESS","MQL generated by T5 model (conf: 94%)"],
+      ["SUCCESS","Aggregation executed in 21ms – 6 groups returned"],
+      ["SUCCESS","Results rendered successfully"],
+    ]
+  },
+  "Employees hired after 2020": {
+    mql: `<span class="kw">db</span>.<span class="field">employees</span>.<span class="op">find</span>({\n  <span class="field">hireDate</span>: { <span class="kw">$gt</span>: <span class="kw">new Date</span>(<span class="str">"2020-12-31"</span>) }\n},{\n  <span class="field">name</span>: <span class="val">1</span>, <span class="field">department</span>: <span class="val">1</span>, <span class="field">hireDate</span>: <span class="val">1</span>, <span class="field">salary</span>: <span class="val">1</span>\n}).<span class="op">sort</span>({ <span class="field">hireDate</span>: <span class="val">-1</span> })`,
+    docs: 7, conf: "89%", time: "24ms", tokens: 5,
+    headers: ["NAME","DEPARTMENT","HIRE DATE","SALARY","TENURE"],
+    rows: [
+      ["Frank Lee","Sales","2023-04-02","$75,400",{badge:"New",cls:"medium"}],
+      ["Henry Wu","Sales","2022-08-14","$66,700",{badge:"New",cls:"medium"}],
+      ["Carol White","Sales","2022-01-10","$71,300",{badge:"New",cls:"medium"}],
+      ["Eva Green","Sales","2021-09-18","$92,100",{badge:"Active",cls:"high"}],
+      ["Alice Johnson","Sales","2021-03-15","$79,200",{badge:"Active",cls:"high"}],
+      ["Ryan Torres","Engineering","2021-11-22","$105,000",{badge:"Active",cls:"high"}],
+      ["Mia Chen","Finance","2021-06-05","$87,500",{badge:"Active",cls:"high"}],
+    ],
+    logs: [
+      ["INFO","Query received: \"Employees hired after 2020\""],
+      ["INFO","NLP preprocessing complete – 5 tokens"],
+      ["INFO","Intent detected: DATE_FILTER"],
+      ["SUCCESS","MQL generated by T5 model (conf: 89%)"],
+      ["SUCCESS","Query executed in 24ms – 7 documents returned"],
+      ["SUCCESS","Results rendered successfully"],
+    ]
+  },
+  "Average salary by department": {
+    mql: `<span class="kw">db</span>.<span class="field">employees</span>.<span class="op">aggregate</span>([\n  { <span class="kw">$group</span>: {\n    <span class="field">_id</span>: <span class="str">"$department"</span>,\n    <span class="field">avgSalary</span>: { <span class="kw">$avg</span>: <span class="str">"$salary"</span> },\n    <span class="field">minSalary</span>: { <span class="kw">$min</span>: <span class="str">"$salary"</span> },\n    <span class="field">maxSalary</span>: { <span class="kw">$max</span>: <span class="str">"$salary"</span> }\n  }},\n  { <span class="kw">$sort</span>: { <span class="field">avgSalary</span>: <span class="val">-1</span> } }\n])`,
+    docs: 6, conf: "93%", time: "26ms", tokens: 6,
+    headers: ["DEPARTMENT","AVG SALARY","MIN SALARY","MAX SALARY","RANGE"],
+    rows: [
+      ["Management","$132,000","$98,000","$145,000",{badge:"High",cls:"high"}],
+      ["Engineering","$118,400","$86,000","$138,500",{badge:"High",cls:"high"}],
+      ["Finance","$95,100","$72,000","$121,000",{badge:"Medium",cls:"medium"}],
+      ["Marketing","$85,600","$64,000","$112,000",{badge:"Medium",cls:"medium"}],
+      ["Sales","$79,800","$68,000","$91,200",{badge:"Medium",cls:"medium"}],
+      ["Operations","$68,200","$52,000","$88,000",{badge:"Low",cls:"low"}],
+    ],
+    logs: [
+      ["INFO","Query received: \"Average salary by department\""],
+      ["INFO","NLP preprocessing complete – 6 tokens"],
+      ["INFO","Intent detected: AGGREGATION_AVG"],
+      ["SUCCESS","MQL generated by T5 model (conf: 93%)"],
+      ["SUCCESS","Aggregation executed in 26ms – 6 groups returned"],
+      ["SUCCESS","Visualizations rendered"],
+    ]
+  }
+};
+
+let barChart, lineChart, activeQuery = null;
+
+function setNav(el) {
+  document.querySelectorAll('.nav-item').forEach(e=>e.classList.remove('active'));
+  el.classList.add('active');
+}
+
+function useChip(el) {
+  document.getElementById('queryInput').value = el.textContent.trim();
+  runQuery();
+}
+
+function clearQuery() {
+  document.getElementById('queryInput').value = '';
+  document.getElementById('results').classList.add('hidden');
+  document.getElementById('emptyState').classList.remove('hidden');
+  activeQuery = null;
+}
+
+async function runQuery() {
+  const val = document.getElementById('queryInput').value.trim();
+  if (!val) return;
+
+  const data = QUERIES[val] || QUERIES["Average salary by department"];
+  activeQuery = data;
+
+  // Show results, hide empty
+  document.getElementById('emptyState').classList.add('hidden');
+  document.getElementById('results').classList.remove('hidden');
+
+  // Animate pipeline
+  const steps = ['s1','s2','s3','s4','s5','s6'];
+  steps.forEach(id => {
+    const el = document.getElementById(id);
+    el.classList.remove('done','active');
+  });
+
+  for (let i=0; i<steps.length; i++) {
+    await delay(180);
+    if (i > 0) document.getElementById(steps[i-1]).classList.replace('active','done');
+    document.getElementById(steps[i]).classList.add('active');
+  }
+  await delay(180);
+  document.getElementById(steps[steps.length-1]).classList.replace('active','done');
+
+  // Set query
+  document.getElementById('generatedQuery').innerHTML = data.mql;
+
+  // Animate stats
+  animateVal('statDocs', data.docs, '', 600);
+  document.getElementById('statConf').textContent = data.conf;
+  document.getElementById('statTime').textContent = data.time;
+  document.getElementById('statTokens').textContent = data.tokens;
+
+  // Render charts
+  renderCharts();
+
+  // Render table
+  renderTable(data);
+
+  // Render logs
+  renderLogs(data.logs);
+}
+
+function delay(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+function animateVal(id, target, suffix, dur) {
+  const el = document.getElementById(id);
+  const start = Date.now();
+  const tick = () => {
+    const p = Math.min((Date.now()-start)/dur, 1);
+    el.textContent = Math.round(target*p) + suffix;
+    if (p < 1) requestAnimationFrame(tick);
+  };
+  requestAnimationFrame(tick);
+}
+
+function renderCharts() {
+  if (barChart) barChart.destroy();
+  if (lineChart) lineChart.destroy();
+
+  const chartDefaults = {
+    plugins: { legend: { display: false } },
+    scales: {
+      x: { grid: { color: '#262d3d' }, ticks: { color: '#5a6480', font: { family: 'JetBrains Mono', size: 11 } } },
+      y: { grid: { color: '#262d3d' }, ticks: { color: '#5a6480', font: { family: 'JetBrains Mono', size: 11 } } }
+    }
+  };
+
+  barChart = new Chart(document.getElementById('barChart'), {
+    type: 'bar',
+    data: {
+      labels: ['T5 Text-to-MQL','BERT','Zero-Shot','GPT-Baseline'],
+      datasets: [{
+        data: [94.2, 91.7, 87.3, 83.1],
+        backgroundColor: ['#00e5a0','#7c5af5','#f5c842','#f55a5a'],
+        borderRadius: 6,
+      }]
+    },
+    options: { ...chartDefaults, scales: { ...chartDefaults.scales, y: { ...chartDefaults.scales.y, min:80, max:100 } } }
+  });
+
+  const times = [28,20,35,30,41,25,18,38,30,20];
+  lineChart = new Chart(document.getElementById('lineChart'), {
+    type: 'line',
+    data: {
+      labels: ['Q1','Q2','Q3','Q4','Q5','Q6','Q7','Q8','Q9','Q10'],
+      datasets: [{
+        data: times,
+        borderColor: '#00e5a0',
+        backgroundColor: 'rgba(0,229,160,0.08)',
+        fill: true,
+        tension: 0.4,
+        pointBackgroundColor: '#00e5a0',
+        pointRadius: 4,
+        borderWidth: 2,
+      }]
+    },
+    options: chartDefaults
+  });
+}
+
+function renderTable(data) {
+  document.getElementById('tableCount').textContent = data.docs + ' documents';
+  const headers = data.headers.map(h => `<th>${h}</th>`).join('');
+  const rows = data.rows.map(row => {
+    const cells = row.map(cell => {
+      if (typeof cell === 'object' && cell.badge !== undefined) {
+        return `<td><span class="badge ${cell.cls}">${cell.badge}</span></td>`;
+      }
+      return `<td>${cell}</td>`;
+    }).join('');
+    return `<tr>${cells}</tr>`;
+  }).join('');
+  document.getElementById('tableContainer').innerHTML = `<table><thead><tr>${headers}</tr></thead><tbody>${rows}</tbody></table>`;
+}
+
+function renderLogs(logs) {
+  const now = new Date();
+  const timeStr = now.toTimeString().slice(0,8);
+  const lines = logs.map(([type, msg]) => {
+    const cls = type === 'INFO' ? 'log-info' : type === 'SUCCESS' ? 'log-success' : 'log-warn';
+    return `<div class="log-line"><span class="log-time">${timeStr}</span><span class="${cls}">[${type}]</span><span class="log-text">${msg}</span></div>`;
+  }).join('');
+  document.getElementById('logsBody').innerHTML = lines;
+}
+
+function copyQuery() {
+  const text = document.getElementById('generatedQuery').innerText;
+  navigator.clipboard.writeText(text).then(()=>{
+    const btn = document.querySelector('.btn-copy');
+    btn.textContent = '✅ Copied!';
+    setTimeout(()=>btn.textContent='📋 Copy', 2000);
+  });
+}
+</script>
+</body>
+</html>
