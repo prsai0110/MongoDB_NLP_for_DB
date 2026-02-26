@@ -3,21 +3,25 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>NLP Query Retrieval System</title>
-<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;800&display=swap" rel="stylesheet">
+<title>MongoDB Query Generator</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;700&family=Outfit:wght@300;400;600;700;900&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <style>
   :root {
-    --bg: #0a0a0f;
-    --surface: #12121a;
-    --card: #1a1a26;
-    --border: #2a2a3e;
-    --accent: #00f5c4;
-    --accent2: #7c5cfc;
-    --accent3: #ff6b6b;
-    --text: #e8e8f0;
-    --muted: #6b6b8a;
-    --glow: 0 0 24px rgba(0,245,196,0.2);
+    --bg:       #0d1117;
+    --surface:  #161b22;
+    --card:     #1c2330;
+    --border:   #30363d;
+    --mg-green: #00ed64;
+    --mg-dark:  #00684a;
+    --mg-light: #00ff85;
+    --amber:    #f59e0b;
+    --red:      #ef4444;
+    --blue:     #3b82f6;
+    --text:     #e6edf3;
+    --muted:    #7d8590;
+    --glow:     0 0 28px rgba(0,237,100,0.18);
+    --glow-sm:  0 0 12px rgba(0,237,100,0.12);
   }
 
   * { margin:0; padding:0; box-sizing:border-box; }
@@ -25,669 +29,742 @@
   body {
     background: var(--bg);
     color: var(--text);
-    font-family: 'Syne', sans-serif;
+    font-family: 'Outfit', sans-serif;
     min-height: 100vh;
     overflow-x: hidden;
   }
 
+  /* Subtle dot grid */
   body::before {
-    content: '';
-    position: fixed;
-    inset: 0;
-    background-image:
-      linear-gradient(rgba(0,245,196,0.03) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(0,245,196,0.03) 1px, transparent 1px);
-    background-size: 40px 40px;
-    pointer-events: none;
-    z-index: 0;
+    content:'';
+    position:fixed; inset:0;
+    background-image: radial-gradient(rgba(0,237,100,0.06) 1px, transparent 1px);
+    background-size: 28px 28px;
+    pointer-events:none; z-index:0;
   }
 
+  /* Green glow blob bottom-left */
   body::after {
-    content: '';
-    position: fixed;
-    top: -200px;
-    right: -200px;
-    width: 600px;
-    height: 600px;
-    background: radial-gradient(circle, rgba(124,92,252,0.12) 0%, transparent 70%);
-    pointer-events: none;
-    z-index: 0;
+    content:'';
+    position:fixed;
+    bottom:-150px; left:-150px;
+    width:500px; height:500px;
+    background: radial-gradient(circle, rgba(0,237,100,0.07) 0%, transparent 70%);
+    pointer-events:none; z-index:0;
   }
 
-  .app { position: relative; z-index: 1; }
+  .app { position:relative; z-index:1; display:flex; flex-direction:column; height:100vh; }
 
+  /* ── HEADER ── */
   header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 20px 40px;
-    border-bottom: 1px solid var(--border);
-    background: rgba(10,10,15,0.8);
-    backdrop-filter: blur(20px);
-    position: sticky;
-    top: 0;
-    z-index: 100;
+    display:flex; align-items:center; justify-content:space-between;
+    padding:0 32px;
+    height:60px;
+    border-bottom:1px solid var(--border);
+    background:rgba(13,17,23,0.92);
+    backdrop-filter:blur(16px);
+    position:sticky; top:0; z-index:200;
+    flex-shrink:0;
   }
 
-  .logo { display: flex; align-items: center; gap: 12px; }
-  .logo-icon {
-    width: 36px; height: 36px;
-    background: linear-gradient(135deg, var(--accent), var(--accent2));
-    border-radius: 8px;
-    display: flex; align-items: center; justify-content: center;
-    font-size: 18px;
+  .logo { display:flex; align-items:center; gap:10px; }
+  .logo-leaf {
+    width:32px; height:32px;
+    background:linear-gradient(135deg, var(--mg-green), var(--mg-dark));
+    border-radius:50% 8px 50% 8px;
+    display:flex; align-items:center; justify-content:center;
+    font-size:16px;
+    box-shadow: var(--glow-sm);
   }
-  .logo-text { font-size: 18px; font-weight: 800; letter-spacing: -0.5px; }
-  .logo-text span { color: var(--accent); }
+  .logo-text { font-size:17px; font-weight:700; letter-spacing:-0.3px; }
+  .logo-text .mongo { color:var(--mg-green); }
 
-  .header-status {
-    display: flex; align-items: center; gap: 8px;
-    font-family: 'Space Mono', monospace;
-    font-size: 12px; color: var(--muted);
+  .header-mid {
+    display:flex; align-items:center; gap:6px;
+    background:var(--surface);
+    border:1px solid var(--border);
+    border-radius:8px;
+    padding:5px 14px;
+    font-family:'JetBrains Mono', monospace;
+    font-size:12px; color:var(--muted);
   }
-  .status-dot {
-    width: 8px; height: 8px;
-    background: var(--accent);
-    border-radius: 50%;
-    animation: pulse 2s infinite;
+  .header-mid .collection-name { color:var(--mg-green); font-weight:500; }
+
+  .header-right { display:flex; align-items:center; gap:16px; }
+  .conn-badge {
+    display:flex; align-items:center; gap:6px;
+    font-family:'JetBrains Mono', monospace;
+    font-size:11px; color:var(--muted);
+  }
+  .conn-dot {
+    width:7px; height:7px;
+    background:var(--mg-green); border-radius:50%;
+    animation:pulse 2.5s infinite;
+    box-shadow:0 0 6px var(--mg-green);
   }
   @keyframes pulse {
-    0%, 100% { opacity: 1; box-shadow: 0 0 0 0 rgba(0,245,196,0.4); }
-    50% { opacity: 0.7; box-shadow: 0 0 0 6px rgba(0,245,196,0); }
+    0%,100%{opacity:1;} 50%{opacity:0.5;}
   }
 
-  .main {
-    display: grid;
-    grid-template-columns: 280px 1fr;
-    grid-template-rows: auto 1fr;
-    min-height: calc(100vh - 77px);
+  .version-tag {
+    background:rgba(0,237,100,0.1);
+    border:1px solid rgba(0,237,100,0.25);
+    color:var(--mg-green);
+    font-size:10px; font-weight:700;
+    font-family:'JetBrains Mono',monospace;
+    padding:3px 8px; border-radius:5px;
+    letter-spacing:0.5px;
   }
 
+  /* ── LAYOUT ── */
+  .workspace {
+    display:grid;
+    grid-template-columns:260px 1fr;
+    flex:1;
+    overflow:hidden;
+  }
+
+  /* ── SIDEBAR ── */
   .sidebar {
-    grid-row: 1 / 3;
-    border-right: 1px solid var(--border);
-    padding: 24px 0;
-    background: rgba(18,18,26,0.6);
+    border-right:1px solid var(--border);
+    background:rgba(22,27,34,0.7);
+    display:flex; flex-direction:column;
+    overflow-y:auto;
+    padding:20px 0 24px;
   }
 
-  .sidebar-section { padding: 8px 24px; margin-bottom: 4px; }
-  .sidebar-label {
-    font-size: 10px; font-weight: 600;
-    letter-spacing: 2px; color: var(--muted);
-    text-transform: uppercase; margin-bottom: 8px; padding: 0 4px;
+  .sb-section { padding:0 16px; margin-bottom:6px; }
+  .sb-label {
+    font-size:9px; font-weight:700;
+    letter-spacing:2px; color:var(--muted);
+    text-transform:uppercase; margin-bottom:8px;
+    padding:0 4px;
   }
 
   .nav-item {
-    display: flex; align-items: center; gap: 10px;
-    padding: 10px 12px; border-radius: 8px;
-    cursor: pointer; font-size: 14px;
-    color: var(--muted); transition: all 0.2s; font-weight: 600;
+    display:flex; align-items:center; gap:9px;
+    padding:9px 10px; border-radius:7px;
+    cursor:pointer; font-size:13px; font-weight:600;
+    color:var(--muted); transition:all 0.18s;
+    margin-bottom:2px;
   }
-  .nav-item:hover { background: var(--border); color: var(--text); }
-  .nav-item.active { background: rgba(0,245,196,0.1); color: var(--accent); }
-  .nav-item .icon { font-size: 16px; }
-
-  .sidebar-divider { border: none; border-top: 1px solid var(--border); margin: 16px 24px; }
-
-  .model-badge {
-    display: flex; align-items: center; justify-content: space-between;
-    padding: 8px 12px; background: var(--card);
-    border-radius: 8px; margin-bottom: 6px;
-    font-size: 13px; cursor: pointer;
-    border: 1px solid transparent; transition: all 0.2s;
+  .nav-item:hover { background:var(--border); color:var(--text); }
+  .nav-item.active { background:rgba(0,237,100,0.1); color:var(--mg-green); }
+  .nav-item .ni { font-size:14px; }
+  .nav-item .nav-count {
+    margin-left:auto;
+    background:var(--border);
+    color:var(--muted);
+    font-family:'JetBrains Mono',monospace;
+    font-size:10px; padding:1px 6px; border-radius:10px;
   }
-  .model-badge:hover { border-color: var(--border); }
-  .model-badge.active-model { border-color: var(--accent); }
-  .model-dot { width: 8px; height: 8px; border-radius: 50%; }
-  .model-acc { font-family: 'Space Mono', monospace; font-size: 11px; color: var(--accent); }
 
-  /* ---- UPLOAD SECTION ---- */
+  .sb-divider { border:none; border-top:1px solid var(--border); margin:14px 16px; }
+
+  /* Collection list */
+  .collection-item {
+    display:flex; align-items:center; gap:8px;
+    padding:8px 10px; border-radius:7px;
+    cursor:pointer; font-size:12px; font-weight:600;
+    color:var(--muted); transition:all 0.18s;
+    font-family:'JetBrains Mono',monospace;
+    margin-bottom:2px;
+  }
+  .collection-item:hover { background:var(--border); color:var(--text); }
+  .collection-item.active-coll { background:rgba(0,237,100,0.08); color:var(--mg-green); border-left:2px solid var(--mg-green); padding-left:8px; }
+  .coll-icon { font-size:13px; }
+  .coll-count { margin-left:auto; font-size:10px; color:var(--muted); }
+
+  /* Operation type selector */
+  .op-grid {
+    display:grid; grid-template-columns:1fr 1fr;
+    gap:6px;
+  }
+  .op-btn {
+    padding:8px 6px; border-radius:7px;
+    background:var(--card); border:1px solid var(--border);
+    color:var(--muted); font-size:11px; font-weight:700;
+    cursor:pointer; transition:all 0.18s;
+    font-family:'JetBrains Mono',monospace;
+    text-align:center; letter-spacing:0.3px;
+  }
+  .op-btn:hover { border-color:var(--mg-green); color:var(--mg-green); }
+  .op-btn.active-op { background:rgba(0,237,100,0.1); border-color:var(--mg-green); color:var(--mg-green); }
+
+  /* Upload zone */
   .upload-zone {
-    position: relative;
-    border: 2px dashed var(--border);
-    border-radius: 12px;
-    padding: 18px 14px;
-    text-align: center;
-    cursor: pointer;
-    transition: all 0.3s;
-    background: rgba(0,0,0,0.2);
-    overflow: hidden;
+    position:relative;
+    border:2px dashed var(--border);
+    border-radius:10px;
+    padding:16px 12px;
+    text-align:center;
+    cursor:pointer; transition:all 0.25s;
+    background:rgba(0,0,0,0.15);
   }
   .upload-zone:hover, .upload-zone.drag-over {
-    border-color: var(--accent);
-    background: rgba(0,245,196,0.04);
-    box-shadow: 0 0 18px rgba(0,245,196,0.1);
+    border-color:var(--mg-green);
+    background:rgba(0,237,100,0.03);
+    box-shadow:var(--glow-sm);
   }
   .upload-zone input[type="file"] {
-    position: absolute; inset: 0;
-    opacity: 0; cursor: pointer; width: 100%; height: 100%;
+    position:absolute; inset:0; opacity:0; cursor:pointer; width:100%; height:100%;
   }
-  .upload-icon {
-    font-size: 26px; margin-bottom: 6px;
-    display: block;
-    transition: transform 0.3s;
-  }
-  .upload-zone:hover .upload-icon { transform: translateY(-3px); }
-  .upload-main-text {
-    font-size: 12px; font-weight: 700;
-    color: var(--text); margin-bottom: 3px;
-    letter-spacing: 0.3px;
-  }
-  .upload-sub-text {
-    font-size: 10px; color: var(--muted);
-    font-family: 'Space Mono', monospace;
-  }
-  .upload-formats {
-    display: flex; gap: 4px; justify-content: center;
-    margin-top: 10px; flex-wrap: wrap;
-  }
+  .upload-icon-big { font-size:22px; margin-bottom:5px; display:block; transition:transform 0.25s; }
+  .upload-zone:hover .upload-icon-big { transform:translateY(-2px); }
+  .upload-main-text { font-size:11px; font-weight:700; color:var(--text); margin-bottom:2px; }
+  .upload-sub-text { font-size:10px; color:var(--muted); font-family:'JetBrains Mono',monospace; }
+  .fmt-row { display:flex; gap:4px; justify-content:center; margin-top:8px; flex-wrap:wrap; }
   .fmt-tag {
-    background: var(--border); color: var(--muted);
-    border-radius: 4px; padding: 2px 6px;
-    font-size: 10px; font-weight: 700;
-    font-family: 'Space Mono', monospace;
-    letter-spacing: 0.5px;
+    background:var(--border); color:var(--muted); border-radius:4px;
+    padding:2px 5px; font-size:9px; font-weight:700;
+    font-family:'JetBrains Mono',monospace; letter-spacing:0.5px;
   }
 
-  /* Uploaded file card */
+  .upload-progress { display:none; margin-top:8px; }
+  .prog-bg { background:var(--border); border-radius:3px; height:3px; overflow:hidden; }
+  .prog-fill {
+    height:100%;
+    background:linear-gradient(90deg,var(--mg-green),var(--mg-dark));
+    border-radius:3px; width:0%; transition:width 0.25s;
+  }
+  .prog-label { font-size:9px; color:var(--muted); font-family:'JetBrains Mono',monospace; margin-top:3px; text-align:center; }
+
   .file-loaded {
-    display: none;
-    background: rgba(0,245,196,0.06);
-    border: 1px solid rgba(0,245,196,0.3);
-    border-radius: 10px;
-    padding: 10px 12px;
-    margin-top: 8px;
-    animation: slideIn 0.35s ease;
+    display:none;
+    background:rgba(0,237,100,0.05);
+    border:1px solid rgba(0,237,100,0.2);
+    border-radius:9px; padding:10px 10px;
+    margin-top:8px; animation:fadeUp 0.3s ease;
   }
-  .file-loaded-row {
-    display: flex; align-items: center;
-    justify-content: space-between;
-    gap: 8px;
+  .fl-row { display:flex; align-items:center; gap:7px; }
+  .fl-info { flex:1; min-width:0; }
+  .fl-name { font-size:11px; font-weight:700; color:var(--mg-green); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; font-family:'JetBrains Mono',monospace; }
+  .fl-meta { font-size:9px; color:var(--muted); font-family:'JetBrains Mono',monospace; margin-top:2px; }
+  .fl-remove { background:none; border:1px solid var(--border); color:var(--muted); border-radius:5px; padding:2px 6px; font-size:10px; cursor:pointer; transition:all 0.18s; flex-shrink:0; }
+  .fl-remove:hover { border-color:var(--red); color:var(--red); }
+  .fl-preview-btn {
+    margin-top:6px; background:none; border:1px solid var(--border);
+    color:var(--muted); border-radius:6px; padding:3px 8px;
+    font-size:9px; cursor:pointer; transition:all 0.18s;
+    font-family:'JetBrains Mono',monospace; width:100%; letter-spacing:0.5px; font-weight:700;
   }
-  .file-loaded-info { flex: 1; min-width: 0; }
-  .file-loaded-name {
-    font-size: 12px; font-weight: 700;
-    color: var(--accent);
-    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  .fl-preview-btn:hover { border-color:var(--mg-green); color:var(--mg-green); }
+  .fl-preview-data {
+    display:none; margin-top:7px; max-height:110px; overflow-y:auto;
+    font-family:'JetBrains Mono',monospace; font-size:9px;
+    border-top:1px solid var(--border); padding-top:6px;
   }
-  .file-loaded-meta {
-    font-size: 10px; color: var(--muted);
-    font-family: 'Space Mono', monospace;
-    margin-top: 2px;
-  }
-  .file-remove-btn {
-    background: none; border: 1px solid var(--border);
-    color: var(--muted); border-radius: 6px;
-    padding: 3px 7px; font-size: 11px;
-    cursor: pointer; transition: all 0.2s; flex-shrink: 0;
-  }
-  .file-remove-btn:hover { border-color: var(--accent3); color: var(--accent3); }
+  .fl-preview-data table { width:100%; border-collapse:collapse; }
+  .fl-preview-data th { color:var(--mg-green); text-align:left; padding:1px 5px; border-bottom:1px solid var(--border); white-space:nowrap; font-size:9px; }
+  .fl-preview-data td { padding:1px 5px; color:var(--muted); font-size:9px; border:none; white-space:nowrap; }
+  .fl-preview-data tr:hover td { color:var(--text); }
 
-  .file-preview-toggle {
-    margin-top: 8px;
-    background: none; border: 1px solid var(--border);
-    color: var(--muted); border-radius: 6px;
-    padding: 4px 10px; font-size: 10px;
-    cursor: pointer; transition: all 0.2s; width: 100%;
-    font-family: 'Space Mono', monospace; font-weight: 700;
-    letter-spacing: 0.5px;
-  }
-  .file-preview-toggle:hover { border-color: var(--accent); color: var(--accent); }
+  /* ── RIGHT PANEL ── */
+  .right-panel { display:flex; flex-direction:column; overflow:hidden; }
 
-  .file-data-preview {
-    display: none;
-    margin-top: 8px;
-    max-height: 120px;
-    overflow-y: auto;
-    font-family: 'Space Mono', monospace;
-    font-size: 10px;
-    color: var(--muted);
-    line-height: 1.7;
-    border-top: 1px solid var(--border);
-    padding-top: 8px;
-  }
-  .file-data-preview table {
-    width: 100%;
-    border-collapse: collapse;
-    font-size: 10px;
-  }
-  .file-data-preview th {
-    color: var(--accent);
-    text-align: left;
-    padding: 2px 6px;
-    border-bottom: 1px solid var(--border);
-    white-space: nowrap;
-  }
-  .file-data-preview td {
-    padding: 2px 6px;
-    color: var(--muted);
-    white-space: nowrap;
-    font-size: 10px;
-    font-family: 'Space Mono', monospace;
-    border: none;
-  }
-  .file-data-preview tr:hover td { color: var(--text); }
-
-  /* Upload progress bar */
-  .upload-progress {
-    display: none;
-    margin-top: 8px;
-  }
-  .progress-bar-bg {
-    background: var(--border);
-    border-radius: 4px;
-    height: 4px;
-    overflow: hidden;
-  }
-  .progress-bar-fill {
-    height: 100%;
-    background: linear-gradient(90deg, var(--accent), var(--accent2));
-    border-radius: 4px;
-    width: 0%;
-    transition: width 0.3s ease;
-  }
-  .progress-label {
-    font-size: 10px; color: var(--muted);
-    font-family: 'Space Mono', monospace;
-    margin-top: 4px; text-align: center;
+  /* Query input area */
+  .query-area {
+    padding:20px 28px 16px;
+    border-bottom:1px solid var(--border);
+    background:rgba(22,27,34,0.5);
+    flex-shrink:0;
   }
 
-  /* active data source badge in query panel */
-  .data-source-banner {
-    display: none;
-    align-items: center;
-    gap: 8px;
-    padding: 8px 14px;
-    background: rgba(0,245,196,0.06);
-    border: 1px solid rgba(0,245,196,0.2);
-    border-radius: 8px;
-    margin-top: 10px;
-    font-size: 12px;
-    color: var(--accent);
-    font-family: 'Space Mono', monospace;
-    font-weight: 700;
-    animation: slideIn 0.3s ease;
+  .qa-top { display:flex; align-items:center; gap:12px; margin-bottom:12px; }
+  .qa-label {
+    font-size:9px; font-weight:700; letter-spacing:2px;
+    color:var(--muted); text-transform:uppercase;
   }
-  .data-source-banner .ds-icon { font-size: 14px; }
-  .data-source-banner .ds-name { flex: 1; color: var(--text); font-size: 12px; }
-  .data-source-banner .ds-rows { color: var(--muted); font-size: 11px; }
+  .active-coll-pill {
+    display:flex; align-items:center; gap:5px;
+    background:var(--card); border:1px solid var(--border);
+    border-radius:6px; padding:3px 10px;
+    font-family:'JetBrains Mono',monospace; font-size:11px;
+    color:var(--mg-green);
+  }
 
-  /* query panel */
-  .query-panel {
-    padding: 32px 40px 24px;
-    border-bottom: 1px solid var(--border);
-    background: rgba(18,18,26,0.4);
+  .query-box-wrap { position:relative; }
+  .query-box {
+    width:100%;
+    background:var(--card);
+    border:1px solid var(--border);
+    border-radius:10px;
+    padding:14px 160px 14px 18px;
+    color:var(--text);
+    font-family:'Outfit',sans-serif;
+    font-size:14px; font-weight:400;
+    outline:none; transition:all 0.25s;
+    height:52px; line-height:24px;
+    resize:none;
   }
-  .panel-title {
-    font-size: 13px; font-weight: 600;
-    letter-spacing: 2px; color: var(--muted);
-    text-transform: uppercase; margin-bottom: 16px;
+  .query-box:focus {
+    border-color:var(--mg-green);
+    box-shadow:var(--glow);
+    background:rgba(28,35,48,0.95);
   }
-  .query-wrapper { position: relative; }
-  .query-input {
-    width: 100%;
-    background: var(--card);
-    border: 1px solid var(--border);
-    border-radius: 12px;
-    padding: 16px 120px 16px 20px;
-    color: var(--text);
-    font-family: 'Syne', sans-serif;
-    font-size: 15px; font-weight: 400;
-    outline: none; transition: all 0.3s;
-    resize: none; height: 56px; line-height: 24px;
-  }
-  .query-input:focus {
-    border-color: var(--accent);
-    box-shadow: var(--glow);
-    background: rgba(26,26,38,0.9);
-  }
-  .query-input::placeholder { color: var(--muted); }
-  .query-actions {
-    position: absolute; right: 8px; top: 50%;
-    transform: translateY(-50%);
-    display: flex; gap: 6px;
-  }
-  .btn-run {
-    background: linear-gradient(135deg, var(--accent), #00c9a7);
-    color: #0a0a0f; border: none; border-radius: 8px;
-    padding: 8px 18px; font-family: 'Syne', sans-serif;
-    font-size: 13px; font-weight: 700; cursor: pointer;
-    transition: all 0.2s; letter-spacing: 0.5px;
-  }
-  .btn-run:hover { transform: scale(1.03); box-shadow: 0 0 16px rgba(0,245,196,0.4); }
-  .btn-run:active { transform: scale(0.98); }
-  .btn-clear {
-    background: var(--border); color: var(--muted);
-    border: none; border-radius: 8px; padding: 8px 12px;
-    font-size: 13px; cursor: pointer; transition: all 0.2s;
-  }
-  .btn-clear:hover { background: var(--card); color: var(--text); }
-  .example-queries { display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap; }
-  .example-chip {
-    background: var(--card); border: 1px solid var(--border);
-    border-radius: 20px; padding: 5px 12px; font-size: 12px;
-    color: var(--muted); cursor: pointer; transition: all 0.2s; font-weight: 600;
-  }
-  .example-chip:hover { border-color: var(--accent); color: var(--accent); background: rgba(0,245,196,0.05); }
+  .query-box::placeholder { color:var(--muted); }
 
-  /* content */
-  .content { padding: 28px 40px; overflow-y: auto; }
+  .qb-actions {
+    position:absolute; right:8px; top:50%;
+    transform:translateY(-50%);
+    display:flex; gap:6px; align-items:center;
+  }
+  .btn-generate {
+    background:linear-gradient(135deg, var(--mg-green), var(--mg-dark));
+    color:#0d1117; border:none; border-radius:7px;
+    padding:8px 16px;
+    font-family:'Outfit',sans-serif; font-size:12px; font-weight:700;
+    cursor:pointer; transition:all 0.2s; letter-spacing:0.3px;
+    white-space:nowrap;
+  }
+  .btn-generate:hover { transform:scale(1.03); box-shadow:var(--glow); }
+  .btn-generate:active { transform:scale(0.97); }
+  .btn-clr {
+    background:var(--border); color:var(--muted);
+    border:none; border-radius:7px; padding:8px 11px;
+    font-size:12px; cursor:pointer; transition:all 0.18s;
+  }
+  .btn-clr:hover { background:var(--card); color:var(--text); }
 
-  .sql-block {
-    background: var(--card); border: 1px solid var(--border);
-    border-left: 3px solid var(--accent); border-radius: 12px;
-    padding: 16px 20px; margin-bottom: 24px;
-    animation: slideIn 0.4s ease;
+  .example-chips { display:flex; gap:7px; margin-top:11px; flex-wrap:wrap; }
+  .chip {
+    background:var(--card); border:1px solid var(--border);
+    border-radius:20px; padding:4px 12px;
+    font-size:11px; color:var(--muted);
+    cursor:pointer; transition:all 0.18s; font-weight:600;
   }
-  @keyframes slideIn {
-    from { opacity: 0; transform: translateY(-10px); }
-    to { opacity: 1; transform: translateY(0); }
-  }
-  .sql-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
-  .sql-label { font-size: 11px; font-weight: 700; letter-spacing: 2px; color: var(--accent); text-transform: uppercase; }
-  .sql-copy {
-    background: none; border: 1px solid var(--border);
-    color: var(--muted); border-radius: 6px; padding: 3px 10px;
-    font-size: 11px; cursor: pointer; transition: all 0.2s;
-  }
-  .sql-copy:hover { border-color: var(--accent); color: var(--accent); }
-  .sql-code { font-family: 'Space Mono', monospace; font-size: 13px; color: #c0c0d8; line-height: 1.6; }
-  .sql-keyword { color: var(--accent2); font-weight: 700; }
-  .sql-table { color: var(--accent); }
-  .sql-string { color: #ff9f7f; }
-  .sql-number { color: #7fccff; }
+  .chip:hover { border-color:var(--mg-green); color:var(--mg-green); background:rgba(0,237,100,0.05); }
 
-  .stats-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 24px; }
+  /* Data source banner */
+  .ds-banner {
+    display:none; align-items:center; gap:8px;
+    padding:7px 12px; margin-top:10px;
+    background:rgba(0,237,100,0.05);
+    border:1px solid rgba(0,237,100,0.2);
+    border-radius:7px;
+    font-family:'JetBrains Mono',monospace; font-size:11px;
+    animation:fadeUp 0.3s ease;
+  }
+  .ds-banner .ds-label { color:var(--muted); font-size:10px; }
+  .ds-banner .ds-val { color:var(--mg-green); font-weight:700; flex:1; }
+  .ds-banner .ds-rows { color:var(--muted); font-size:10px; }
+  @keyframes fadeUp {
+    from{opacity:0;transform:translateY(6px);}
+    to{opacity:1;transform:translateY(0);}
+  }
+
+  /* ── CONTENT ── */
+  .content { flex:1; overflow-y:auto; padding:22px 28px 28px; }
+
+  /* Empty state */
+  .empty-state { text-align:center; padding:70px 20px; color:var(--muted); }
+  .es-icon {
+    font-size:52px; margin-bottom:16px; display:block;
+    filter:grayscale(0.3);
+  }
+  .es-title { font-size:18px; font-weight:700; color:var(--text); margin-bottom:8px; }
+  .es-sub { font-size:13px; line-height:1.7; }
+
+  /* Loading */
+  .loading { display:none; align-items:center; gap:12px; padding:20px 0; font-family:'JetBrains Mono',monospace; font-size:12px; color:var(--muted); }
+  .spinner { width:16px; height:16px; border:2px solid var(--border); border-top-color:var(--mg-green); border-radius:50%; animation:spin 0.65s linear infinite; }
+  @keyframes spin { to{transform:rotate(360deg);} }
+
+  /* Results */
+  @keyframes slideUp {
+    from{opacity:0;transform:translateY(12px);}
+    to{opacity:1;transform:translateY(0);}
+  }
+
+  /* Pipeline steps */
+  .pipeline-steps {
+    display:flex; gap:0; margin-bottom:18px;
+    border-radius:8px; overflow:hidden;
+    border:1px solid var(--border);
+  }
+  .ps {
+    flex:1; padding:10px 8px; text-align:center;
+    font-size:10px; font-weight:700; letter-spacing:0.3px;
+    color:var(--muted); background:var(--card);
+    border-right:1px solid var(--border); transition:all 0.3s;
+  }
+  .ps:last-child { border-right:none; }
+  .ps.done { color:var(--mg-green); background:rgba(0,237,100,0.06); }
+  .ps.active { color:var(--text); background:rgba(0,237,100,0.12); }
+  .ps-icon { display:block; font-size:16px; margin-bottom:2px; }
+
+  /* MongoDB query block */
+  .query-block {
+    background:var(--card);
+    border:1px solid var(--border);
+    border-left:3px solid var(--mg-green);
+    border-radius:10px;
+    margin-bottom:20px;
+    overflow:hidden;
+    animation:slideUp 0.35s ease;
+  }
+  .qb-header {
+    display:flex; align-items:center; justify-content:space-between;
+    padding:12px 16px;
+    border-bottom:1px solid var(--border);
+    background:rgba(0,237,100,0.03);
+  }
+  .qb-header-left { display:flex; align-items:center; gap:10px; }
+  .qb-method {
+    background:rgba(0,237,100,0.15);
+    color:var(--mg-green); font-family:'JetBrains Mono',monospace;
+    font-size:11px; font-weight:700; padding:3px 8px; border-radius:5px;
+    letter-spacing:0.5px;
+  }
+  .qb-operation { font-size:12px; color:var(--muted); font-family:'JetBrains Mono',monospace; }
+  .qb-copy {
+    background:none; border:1px solid var(--border);
+    color:var(--muted); border-radius:6px;
+    padding:3px 10px; font-size:11px; cursor:pointer; transition:all 0.18s;
+  }
+  .qb-copy:hover { border-color:var(--mg-green); color:var(--mg-green); }
+  .qb-body { padding:14px 16px; }
+  .qb-code {
+    font-family:'JetBrains Mono',monospace;
+    font-size:12.5px; color:#adbac7; line-height:1.7;
+    white-space:pre-wrap; word-break:break-word;
+  }
+
+  /* Syntax colors */
+  .kw   { color:#f47067; }   /* keywords: find, aggregate, $match */
+  .field{ color:#dcbdfb; }   /* field names */
+  .str  { color:#96d0ff; }   /* strings */
+  .num  { color:#6cb6ff; }   /* numbers */
+  .op   { color:var(--mg-green); } /* operators: $gt, $eq */
+  .coll { color:#e3b341; }   /* collection name */
+  .fn   { color:#f69d50; }   /* function names */
+  .comment { color:var(--muted); font-style:italic; }
+
+  /* Stats row */
+  .stats-row { display:grid; grid-template-columns:repeat(4,1fr); gap:14px; margin-bottom:20px; }
   .stat-card {
-    background: var(--card); border: 1px solid var(--border);
-    border-radius: 12px; padding: 18px 20px; transition: all 0.2s;
-    animation: slideIn 0.4s ease;
+    background:var(--card); border:1px solid var(--border);
+    border-radius:10px; padding:16px 18px;
+    transition:all 0.2s; animation:slideUp 0.4s ease;
   }
-  .stat-card:hover { border-color: var(--accent); transform: translateY(-2px); }
-  .stat-label { font-size: 11px; font-weight: 600; color: var(--muted); letter-spacing: 1px; text-transform: uppercase; margin-bottom: 8px; }
-  .stat-value { font-size: 26px; font-weight: 800; line-height: 1; margin-bottom: 4px; }
-  .stat-sub { font-size: 12px; color: var(--muted); font-family: 'Space Mono', monospace; }
-  .stat-card:nth-child(1) .stat-value { color: var(--accent); }
-  .stat-card:nth-child(2) .stat-value { color: var(--accent2); }
-  .stat-card:nth-child(3) .stat-value { color: #ffd166; }
-  .stat-card:nth-child(4) .stat-value { color: var(--accent3); }
+  .stat-card:hover { border-color:var(--mg-green); transform:translateY(-2px); box-shadow:var(--glow-sm); }
+  .sc-label { font-size:10px; font-weight:600; color:var(--muted); letter-spacing:1px; text-transform:uppercase; margin-bottom:6px; }
+  .sc-val { font-size:24px; font-weight:900; line-height:1; margin-bottom:3px; }
+  .sc-sub { font-size:11px; color:var(--muted); font-family:'JetBrains Mono',monospace; }
+  .stat-card:nth-child(1) .sc-val { color:var(--mg-green); }
+  .stat-card:nth-child(2) .sc-val { color:#96d0ff; }
+  .stat-card:nth-child(3) .sc-val { color:var(--amber); }
+  .stat-card:nth-child(4) .sc-val { color:#dcbdfb; }
 
-  .charts-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 24px; }
-  .chart-card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 20px; animation: slideIn 0.5s ease; }
-  .chart-title { font-size: 13px; font-weight: 700; letter-spacing: 1px; color: var(--text); margin-bottom: 4px; }
-  .chart-sub { font-size: 11px; color: var(--muted); margin-bottom: 16px; }
-  .chart-container { position: relative; height: 200px; }
+  /* Charts */
+  .charts-grid { display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:20px; }
+  .chart-card {
+    background:var(--card); border:1px solid var(--border);
+    border-radius:10px; padding:18px; animation:slideUp 0.45s ease;
+  }
+  .cc-title { font-size:12px; font-weight:700; color:var(--text); margin-bottom:3px; }
+  .cc-sub { font-size:10px; color:var(--muted); margin-bottom:14px; }
+  .cc-wrap { position:relative; height:190px; }
 
-  .table-card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; margin-bottom: 24px; animation: slideIn 0.5s ease; }
-  .table-header { display: flex; align-items: center; justify-content: space-between; padding: 16px 20px; border-bottom: 1px solid var(--border); }
-  .table-title { font-size: 14px; font-weight: 700; }
-  .table-count { font-family: 'Space Mono', monospace; font-size: 12px; color: var(--muted); }
-  table { width: 100%; border-collapse: collapse; }
-  thead th { background: rgba(42,42,62,0.5); padding: 10px 16px; text-align: left; font-size: 11px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; color: var(--muted); border-bottom: 1px solid var(--border); }
-  tbody tr { border-bottom: 1px solid rgba(42,42,62,0.5); transition: background 0.15s; }
-  tbody tr:hover { background: rgba(0,245,196,0.03); }
-  tbody tr:last-child { border-bottom: none; }
-  td { padding: 11px 16px; font-size: 13px; color: var(--text); font-family: 'Space Mono', monospace; }
+  /* Results table */
+  .table-card {
+    background:var(--card); border:1px solid var(--border);
+    border-radius:10px; overflow:hidden;
+    margin-bottom:20px; animation:slideUp 0.5s ease;
+  }
+  .tc-header {
+    display:flex; align-items:center; justify-content:space-between;
+    padding:13px 16px; border-bottom:1px solid var(--border);
+    background:rgba(0,237,100,0.02);
+  }
+  .tc-title { font-size:13px; font-weight:700; }
+  .tc-count { font-family:'JetBrains Mono',monospace; font-size:11px; color:var(--muted); }
+  table { width:100%; border-collapse:collapse; }
+  thead th {
+    background:rgba(48,54,61,0.5); padding:9px 14px;
+    text-align:left; font-size:10px; font-weight:700;
+    letter-spacing:1.5px; text-transform:uppercase;
+    color:var(--muted); border-bottom:1px solid var(--border);
+    font-family:'JetBrains Mono',monospace;
+  }
+  tbody tr { border-bottom:1px solid rgba(48,54,61,0.5); transition:background 0.12s; }
+  tbody tr:hover { background:rgba(0,237,100,0.03); }
+  tbody tr:last-child { border-bottom:none; }
+  td { padding:10px 14px; font-size:12px; color:var(--text); font-family:'JetBrains Mono',monospace; }
 
-  .badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 700; }
-  .badge-green { background: rgba(0,245,196,0.15); color: var(--accent); }
-  .badge-purple { background: rgba(124,92,252,0.15); color: var(--accent2); }
-  .badge-red { background: rgba(255,107,107,0.15); color: var(--accent3); }
-  .badge-yellow { background: rgba(255,209,102,0.15); color: #ffd166; }
+  .badge { display:inline-block; padding:2px 7px; border-radius:4px; font-size:10px; font-weight:700; font-family:'JetBrains Mono',monospace; }
+  .badge-green  { background:rgba(0,237,100,0.12); color:var(--mg-green); }
+  .badge-blue   { background:rgba(59,130,246,0.12); color:var(--blue); }
+  .badge-red    { background:rgba(239,68,68,0.12); color:var(--red); }
+  .badge-amber  { background:rgba(245,158,11,0.12); color:var(--amber); }
+  .badge-purple { background:rgba(220,189,251,0.12); color:#dcbdfb; }
 
-  .logs-card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; }
-  .logs-header { display: flex; align-items: center; justify-content: space-between; padding: 14px 20px; border-bottom: 1px solid var(--border); }
-  .logs-title { font-size: 13px; font-weight: 700; color: var(--text); }
-  .logs-live { display: flex; align-items: center; gap: 6px; font-size: 11px; color: var(--accent); font-family: 'Space Mono', monospace; }
-  .log-body { padding: 12px 20px; max-height: 160px; overflow-y: auto; font-family: 'Space Mono', monospace; font-size: 12px; line-height: 2; }
-  .log-line { display: flex; gap: 12px; animation: fadeIn 0.3s ease; }
-  @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-  .log-time { color: var(--muted); }
-  .log-type-info { color: var(--accent2); }
-  .log-type-success { color: var(--accent); }
-  .log-type-warn { color: #ffd166; }
-  .log-type-error { color: var(--accent3); }
-  .log-msg { color: var(--text); }
+  /* Logs */
+  .logs-card {
+    background:var(--card); border:1px solid var(--border);
+    border-radius:10px; overflow:hidden; animation:slideUp 0.55s ease;
+  }
+  .lc-header {
+    display:flex; align-items:center; justify-content:space-between;
+    padding:12px 16px; border-bottom:1px solid var(--border);
+  }
+  .lc-title { font-size:12px; font-weight:700; }
+  .lc-live {
+    display:flex; align-items:center; gap:5px;
+    font-size:10px; color:var(--mg-green);
+    font-family:'JetBrains Mono',monospace;
+  }
+  .log-body {
+    padding:10px 16px; max-height:140px;
+    overflow-y:auto; font-family:'JetBrains Mono',monospace;
+    font-size:11px; line-height:2;
+  }
+  .log-line { display:flex; gap:12px; animation:fadeIn 0.25s ease; }
+  @keyframes fadeIn{from{opacity:0}to{opacity:1}}
+  .lg-time { color:var(--muted); }
+  .lg-info    { color:#96d0ff; }
+  .lg-success { color:var(--mg-green); }
+  .lg-warn    { color:var(--amber); }
+  .lg-error   { color:var(--red); }
+  .lg-msg     { color:var(--text); }
 
-  .loading { display: none; align-items: center; gap: 10px; padding: 16px 0; font-size: 13px; color: var(--muted); font-family: 'Space Mono', monospace; }
-  .spinner { width: 18px; height: 18px; border: 2px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.7s linear infinite; }
-  @keyframes spin { to { transform: rotate(360deg); } }
-
-  .empty-state { text-align: center; padding: 60px 0; color: var(--muted); }
-  .empty-state .emoji { font-size: 48px; margin-bottom: 16px; }
-  .empty-state p { font-size: 14px; line-height: 1.6; }
-
-  ::-webkit-scrollbar { width: 4px; height: 4px; }
-  ::-webkit-scrollbar-track { background: transparent; }
-  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
-  ::-webkit-scrollbar-thumb:hover { background: var(--muted); }
-
-  .processing-steps { display: flex; gap: 0; margin-bottom: 20px; overflow: hidden; border-radius: 10px; border: 1px solid var(--border); }
-  .step { flex: 1; padding: 12px 10px; text-align: center; font-size: 11px; font-weight: 700; letter-spacing: 0.5px; color: var(--muted); background: var(--card); border-right: 1px solid var(--border); transition: all 0.3s; position: relative; }
-  .step:last-child { border-right: none; }
-  .step.done { color: var(--accent); background: rgba(0,245,196,0.06); }
-  .step.active { color: var(--text); background: rgba(124,92,252,0.1); }
-  .step-num { display: block; font-size: 18px; margin-bottom: 2px; }
+  /* scrollbar */
+  ::-webkit-scrollbar { width:4px; height:4px; }
+  ::-webkit-scrollbar-track { background:transparent; }
+  ::-webkit-scrollbar-thumb { background:var(--border); border-radius:2px; }
+  ::-webkit-scrollbar-thumb:hover { background:var(--muted); }
 </style>
 </head>
 <body>
 <div class="app">
 
+  <!-- HEADER -->
   <header>
     <div class="logo">
-      <div class="logo-icon">🧠</div>
-      <div class="logo-text">NLP<span>Query</span></div>
+      <div class="logo-leaf">🍃</div>
+      <div class="logo-text"><span class="mongo">Mongo</span>Query</div>
     </div>
-    <div style="display:flex;gap:32px;align-items:center;">
-      <div style="font-size:13px;color:var(--muted);font-weight:600;">AI-Powered Data Retrieval System</div>
-      <div class="header-status">
-        <div class="status-dot"></div>
-        SYSTEM ONLINE
+    <div class="header-mid">
+      <span style="color:var(--muted);">db.</span><span class="collection-name" id="headerColl">employees</span><span style="color:var(--muted);">.find(...)</span>
+    </div>
+    <div class="header-right">
+      <span class="version-tag">v7.0</span>
+      <div class="conn-badge">
+        <div class="conn-dot"></div>
+        CONNECTED
       </div>
     </div>
   </header>
 
-  <div class="main">
+  <div class="workspace">
 
     <!-- SIDEBAR -->
     <aside class="sidebar">
-      <div class="sidebar-section">
-        <div class="sidebar-label">Navigation</div>
-        <div class="nav-item active" onclick="setNav(this)"><span class="icon">⚡</span> Query Interface</div>
-        <div class="nav-item" onclick="setNav(this)"><span class="icon">📊</span> Analytics</div>
-        <div class="nav-item" onclick="setNav(this)"><span class="icon">🗄️</span> Database</div>
-        <div class="nav-item" onclick="setNav(this)"><span class="icon">📋</span> Query History</div>
-        <div class="nav-item" onclick="setNav(this)"><span class="icon">⚙️</span> Settings</div>
+
+      <div class="sb-section">
+        <div class="sb-label">Navigation</div>
+        <div class="nav-item active" onclick="setNav(this)"><span class="ni">⚡</span>Query Generator<span class="nav-count">5</span></div>
+        <div class="nav-item" onclick="setNav(this)"><span class="ni">📊</span>Aggregations</div>
+        <div class="nav-item" onclick="setNav(this)"><span class="ni">🗂️</span>Collections</div>
+        <div class="nav-item" onclick="setNav(this)"><span class="ni">📋</span>Query History</div>
+        <div class="nav-item" onclick="setNav(this)"><span class="ni">🔍</span>Indexes</div>
+        <div class="nav-item" onclick="setNav(this)"><span class="ni">⚙️</span>Settings</div>
       </div>
 
-      <hr class="sidebar-divider">
+      <hr class="sb-divider">
 
-      <!-- ===== UPLOAD DATA FILE SECTION ===== -->
-      <div class="sidebar-section">
-        <div class="sidebar-label">Upload Data File</div>
+      <div class="sb-section">
+        <div class="sb-label">Collections</div>
+        <div class="collection-item active-coll" onclick="selectColl(this,'employees')"><span class="coll-icon">📁</span>employees<span class="coll-count">1,240</span></div>
+        <div class="collection-item" onclick="selectColl(this,'departments')"><span class="coll-icon">📁</span>departments<span class="coll-count">12</span></div>
+        <div class="collection-item" onclick="selectColl(this,'projects')"><span class="coll-icon">📁</span>projects<span class="coll-count">348</span></div>
+        <div class="collection-item" onclick="selectColl(this,'salaries')"><span class="coll-icon">📁</span>salaries<span class="coll-count">4,820</span></div>
+      </div>
 
+      <hr class="sb-divider">
+
+      <div class="sb-section">
+        <div class="sb-label">Operation Type</div>
+        <div class="op-grid">
+          <div class="op-btn active-op" onclick="selectOp(this)">find()</div>
+          <div class="op-btn" onclick="selectOp(this)">aggregate()</div>
+          <div class="op-btn" onclick="selectOp(this)">insertOne()</div>
+          <div class="op-btn" onclick="selectOp(this)">updateMany()</div>
+          <div class="op-btn" onclick="selectOp(this)">deleteOne()</div>
+          <div class="op-btn" onclick="selectOp(this)">countDocs()</div>
+        </div>
+      </div>
+
+      <hr class="sb-divider">
+
+      <!-- UPLOAD -->
+      <div class="sb-section">
+        <div class="sb-label">Upload Data File</div>
         <div class="upload-zone" id="uploadZone"
              ondragover="handleDragOver(event)"
              ondragleave="handleDragLeave(event)"
              ondrop="handleDrop(event)">
-          <input type="file" id="fileInput" accept=".csv,.xlsx,.xls,.json,.tsv"
-                 onchange="handleFileSelect(event)">
-          <span class="upload-icon">📂</span>
+          <input type="file" id="fileInput" accept=".csv,.xlsx,.xls,.json,.tsv" onchange="handleFileSelect(event)">
+          <span class="upload-icon-big">📂</span>
           <div class="upload-main-text">Drop file or click to browse</div>
-          <div class="upload-sub-text">Supported formats:</div>
-          <div class="upload-formats">
+          <div class="upload-sub-text">Max 10MB</div>
+          <div class="fmt-row">
             <span class="fmt-tag">CSV</span>
-            <span class="fmt-tag">XLSX</span>
             <span class="fmt-tag">JSON</span>
+            <span class="fmt-tag">XLSX</span>
             <span class="fmt-tag">TSV</span>
           </div>
         </div>
 
-        <!-- Progress -->
         <div class="upload-progress" id="uploadProgress">
-          <div class="progress-bar-bg">
-            <div class="progress-bar-fill" id="progressFill"></div>
-          </div>
-          <div class="progress-label" id="progressLabel">Parsing file...</div>
+          <div class="prog-bg"><div class="prog-fill" id="progFill"></div></div>
+          <div class="prog-label" id="progLabel">Parsing...</div>
         </div>
 
-        <!-- File loaded card -->
         <div class="file-loaded" id="fileLoaded">
-          <div class="file-loaded-row">
-            <div style="font-size:20px;">📄</div>
-            <div class="file-loaded-info">
-              <div class="file-loaded-name" id="fileLoadedName">—</div>
-              <div class="file-loaded-meta" id="fileLoadedMeta">—</div>
+          <div class="fl-row">
+            <span style="font-size:18px;">📄</span>
+            <div class="fl-info">
+              <div class="fl-name" id="flName">—</div>
+              <div class="fl-meta" id="flMeta">—</div>
             </div>
-            <button class="file-remove-btn" onclick="removeFile()">✕</button>
+            <button class="fl-remove" onclick="removeFile()">✕</button>
           </div>
-          <button class="file-preview-toggle" id="previewToggle" onclick="togglePreview()">▾ PREVIEW DATA</button>
-          <div class="file-data-preview" id="fileDataPreview"></div>
-        </div>
-      </div>
-      <!-- ===== END UPLOAD SECTION ===== -->
-
-      <hr class="sidebar-divider">
-
-      <div class="sidebar-section">
-        <div class="sidebar-label">Active Models</div>
-        <div class="model-badge active-model" onclick="selectModel(this)">
-          <div style="display:flex;align-items:center;gap:8px;">
-            <div class="model-dot" style="background:var(--accent)"></div>
-            <span style="font-size:13px;font-weight:600;">T5 Text-to-SQL</span>
-          </div>
-          <span class="model-acc">94.2%</span>
-        </div>
-        <div class="model-badge" onclick="selectModel(this)">
-          <div style="display:flex;align-items:center;gap:8px;">
-            <div class="model-dot" style="background:var(--accent2)"></div>
-            <span style="font-size:13px;font-weight:600;">BERT</span>
-          </div>
-          <span class="model-acc" style="color:var(--accent2)">91.7%</span>
-        </div>
-        <div class="model-badge" onclick="selectModel(this)">
-          <div style="display:flex;align-items:center;gap:8px;">
-            <div class="model-dot" style="background:#ffd166"></div>
-            <span style="font-size:13px;font-weight:600;">Zero-Shot</span>
-          </div>
-          <span class="model-acc" style="color:#ffd166">87.3%</span>
+          <button class="fl-preview-btn" id="flPreviewBtn" onclick="togglePreview()">▾ PREVIEW DOCUMENTS</button>
+          <div class="fl-preview-data" id="flPreviewData"></div>
         </div>
       </div>
 
-      <hr class="sidebar-divider">
+      <hr class="sb-divider">
 
-      <div class="sidebar-section">
-        <div class="sidebar-label">Database</div>
-        <div style="padding:12px;background:var(--card);border-radius:10px;border:1px solid var(--border);" id="dbInfoBox">
-          <div style="font-size:12px;color:var(--muted);margin-bottom:6px;font-weight:600;">CONNECTED TO</div>
-          <div style="font-size:14px;font-weight:700;color:var(--accent);font-family:'Space Mono',monospace;" id="dbName">employees.db</div>
-          <div style="font-size:11px;color:var(--muted);margin-top:4px;" id="dbMeta">SQLite · 4 tables · 1,240 rows</div>
+      <div class="sb-section">
+        <div class="sb-label">Database</div>
+        <div style="background:var(--card);border:1px solid var(--border);border-radius:8px;padding:10px 12px;">
+          <div style="font-size:9px;color:var(--muted);font-weight:700;letter-spacing:1.5px;margin-bottom:5px;">ACTIVE DATABASE</div>
+          <div style="font-size:13px;font-weight:700;color:var(--mg-green);font-family:'JetBrains Mono',monospace;" id="dbName">myDatabase</div>
+          <div style="font-size:10px;color:var(--muted);margin-top:3px;font-family:'JetBrains Mono',monospace;" id="dbMeta">4 collections · 6,420 docs</div>
         </div>
       </div>
+
     </aside>
 
-    <!-- RIGHT SIDE -->
-    <div style="display:flex;flex-direction:column;overflow:hidden;">
+    <!-- RIGHT PANEL -->
+    <div class="right-panel">
 
-      <!-- QUERY PANEL -->
-      <div class="query-panel">
-        <div class="panel-title">Natural Language Query</div>
-        <div class="query-wrapper">
-          <input type="text" class="query-input" id="queryInput"
-            placeholder="Ask anything in plain English... e.g. Show all employees in Sales department"/>
-          <div class="query-actions">
-            <button class="btn-clear" onclick="clearQuery()">Clear</button>
-            <button class="btn-run" onclick="runQuery()">▶ Run Query</button>
+      <!-- QUERY INPUT -->
+      <div class="query-area">
+        <div class="qa-top">
+          <span class="qa-label">Natural Language → MongoDB</span>
+          <div class="active-coll-pill">🍃 db.<span id="activeColl">employees</span></div>
+        </div>
+        <div class="query-box-wrap">
+          <input type="text" class="query-box" id="queryInput"
+            placeholder="e.g. Find all employees in Sales with salary over 80000"/>
+          <div class="qb-actions">
+            <button class="btn-clr" onclick="clearQuery()">Clear</button>
+            <button class="btn-generate" onclick="runQuery()">⚡ Generate</button>
           </div>
         </div>
 
-        <!-- Active data source banner -->
-        <div class="data-source-banner" id="dataSourceBanner">
-          <span class="ds-icon">📂</span>
-          <span style="font-size:11px;color:var(--muted);">ACTIVE DATA:</span>
-          <span class="ds-name" id="bannerFileName">—</span>
-          <span class="ds-rows" id="bannerRows">—</span>
+        <div class="ds-banner" id="dsBanner">
+          <span style="font-size:14px;">📂</span>
+          <span class="ds-label">SOURCE:</span>
+          <span class="ds-val" id="dsFileName">—</span>
+          <span class="ds-rows" id="dsRows">—</span>
         </div>
 
-        <div class="example-queries">
-          <span class="example-chip" onclick="setQuery(this)">Show all employees in Sales</span>
-          <span class="example-chip" onclick="setQuery(this)">Top 5 highest paid employees</span>
-          <span class="example-chip" onclick="setQuery(this)">Count employees by department</span>
-          <span class="example-chip" onclick="setQuery(this)">Employees hired after 2020</span>
-          <span class="example-chip" onclick="setQuery(this)">Average salary by department</span>
+        <div class="example-chips">
+          <span class="chip" onclick="useChip(this)">Find all employees in Sales</span>
+          <span class="chip" onclick="useChip(this)">Top 5 highest paid</span>
+          <span class="chip" onclick="useChip(this)">Count by department</span>
+          <span class="chip" onclick="useChip(this)">Hired after 2020</span>
+          <span class="chip" onclick="useChip(this)">Average salary per dept</span>
         </div>
       </div>
 
       <!-- CONTENT -->
-      <div class="content" id="mainContent">
+      <div class="content" id="content">
+
         <div class="empty-state" id="emptyState">
-          <div class="emoji">🔍</div>
-          <p>Enter a natural language query above<br>and the AI will convert it to SQL automatically.</p>
+          <span class="es-icon">🍃</span>
+          <div class="es-title">MongoDB Query Generator</div>
+          <div class="es-sub">Type a question in plain English above.<br>The AI will convert it into a MongoDB query instantly.</div>
         </div>
 
         <div class="loading" id="loadingState">
           <div class="spinner"></div>
-          <span id="loadingMsg">Processing natural language...</span>
+          <span id="loadingMsg">Parsing natural language...</span>
         </div>
 
         <div id="results" style="display:none;">
-          <div class="processing-steps" id="processingSteps">
-            <div class="step done" id="s1"><span class="step-num">✓</span>Tokenize</div>
-            <div class="step done" id="s2"><span class="step-num">✓</span>NER</div>
-            <div class="step done" id="s3"><span class="step-num">✓</span>Intent</div>
-            <div class="step done" id="s4"><span class="step-num">✓</span>SQL Gen</div>
-            <div class="step done" id="s5"><span class="step-num">✓</span>Execute</div>
-            <div class="step done" id="s6"><span class="step-num">✓</span>Visualize</div>
+
+          <!-- Pipeline steps -->
+          <div class="pipeline-steps">
+            <div class="ps done" id="ps1"><span class="ps-icon">✓</span>Tokenize</div>
+            <div class="ps done" id="ps2"><span class="ps-icon">✓</span>Intent</div>
+            <div class="ps done" id="ps3"><span class="ps-icon">✓</span>Schema Map</div>
+            <div class="ps done" id="ps4"><span class="ps-icon">✓</span>Query Gen</div>
+            <div class="ps done" id="ps5"><span class="ps-icon">✓</span>Optimize</div>
+            <div class="ps done" id="ps6"><span class="ps-icon">✓</span>Execute</div>
           </div>
 
-          <div class="sql-block">
-            <div class="sql-header">
-              <span class="sql-label">Generated SQL</span>
-              <button class="sql-copy" onclick="copySQL()">📋 Copy</button>
+          <!-- Query block -->
+          <div class="query-block">
+            <div class="qb-header">
+              <div class="qb-header-left">
+                <span class="qb-method" id="qbMethod">find()</span>
+                <span class="qb-operation" id="qbOperation">db.employees.find(...)</span>
+              </div>
+              <button class="qb-copy" onclick="copyQuery()">📋 Copy</button>
             </div>
-            <div class="sql-code" id="sqlOutput"></div>
+            <div class="qb-body">
+              <pre class="qb-code" id="queryOutput"></pre>
+            </div>
           </div>
 
+          <!-- Stats -->
           <div class="stats-row">
             <div class="stat-card">
-              <div class="stat-label">Rows Retrieved</div>
-              <div class="stat-value" id="statRows">—</div>
-              <div class="stat-sub">result records</div>
+              <div class="sc-label">Documents</div>
+              <div class="sc-val" id="statDocs">—</div>
+              <div class="sc-sub">matched</div>
             </div>
             <div class="stat-card">
-              <div class="stat-label">Confidence</div>
-              <div class="stat-value" id="statConf">—</div>
-              <div class="stat-sub">model accuracy</div>
+              <div class="sc-label">Confidence</div>
+              <div class="sc-val" id="statConf">—</div>
+              <div class="sc-sub">model accuracy</div>
             </div>
             <div class="stat-card">
-              <div class="stat-label">Exec Time</div>
-              <div class="stat-value" id="statTime">—</div>
-              <div class="stat-sub">milliseconds</div>
+              <div class="sc-label">Exec Time</div>
+              <div class="sc-val" id="statTime">—</div>
+              <div class="sc-sub">milliseconds</div>
             </div>
             <div class="stat-card">
-              <div class="stat-label">Tokens</div>
-              <div class="stat-value" id="statTokens">—</div>
-              <div class="stat-sub">processed</div>
+              <div class="sc-label">Index Used</div>
+              <div class="sc-val" id="statIndex">—</div>
+              <div class="sc-sub">scan type</div>
             </div>
           </div>
 
+          <!-- Charts -->
           <div class="charts-grid">
             <div class="chart-card">
-              <div class="chart-title">Model Accuracy Comparison</div>
-              <div class="chart-sub">Performance across transformer models</div>
-              <div class="chart-container"><canvas id="modelChart"></canvas></div>
+              <div class="cc-title">Query Method Distribution</div>
+              <div class="cc-sub">Usage across query types this session</div>
+              <div class="cc-wrap"><canvas id="methodChart"></canvas></div>
             </div>
             <div class="chart-card">
-              <div class="chart-title">Query Processing Time</div>
-              <div class="chart-sub">Last 10 queries in milliseconds</div>
-              <div class="chart-container"><canvas id="timeChart"></canvas></div>
+              <div class="cc-title">Execution Time History</div>
+              <div class="cc-sub">Last 10 queries (ms)</div>
+              <div class="cc-wrap"><canvas id="timeChart"></canvas></div>
             </div>
           </div>
 
+          <!-- Results table -->
           <div class="table-card">
-            <div class="table-header">
-              <span class="table-title">Query Results</span>
-              <span class="table-count" id="tableCount">0 rows</span>
+            <div class="tc-header">
+              <span class="tc-title">Result Documents</span>
+              <span class="tc-count" id="tableCount">0 documents</span>
             </div>
             <div style="overflow-x:auto;">
               <table>
@@ -697,13 +774,15 @@
             </div>
           </div>
 
+          <!-- Logs -->
           <div class="logs-card">
-            <div class="logs-header">
-              <span class="logs-title">System Logs</span>
-              <span class="logs-live"><span class="status-dot" style="width:6px;height:6px;"></span>LIVE</span>
+            <div class="lc-header">
+              <span class="lc-title">Query Execution Log</span>
+              <span class="lc-live"><span class="conn-dot" style="width:6px;height:6px;box-shadow:none;"></span>LIVE</span>
             </div>
             <div class="log-body" id="logBody"></div>
           </div>
+
         </div>
       </div>
     </div>
@@ -711,471 +790,470 @@
 </div>
 
 <script>
-// ---- QUERY DATA ----
-const QUERY_DATA = {
-  "show all employees in sales": {
-    sql: `<span class="sql-keyword">SELECT</span> employee_id, name, department, salary, hire_date\n<span class="sql-keyword">FROM</span> <span class="sql-table">employees</span>\n<span class="sql-keyword">WHERE</span> department = <span class="sql-string">'Sales'</span>\n<span class="sql-keyword">ORDER BY</span> name <span class="sql-keyword">ASC</span>;`,
-    rows: 8, conf: "94%", time: "23", tokens: 9,
-    headers: ["ID", "Name", "Department", "Salary", "Hire Date", "Status"],
+// ── MONGODB QUERY DATA ──
+const QUERIES = {
+  "find all employees in sales": {
+    method: "find()",
+    operation: "db.employees.find(...)",
+    code: `db.<span class="coll">employees</span>.<span class="fn">find</span>(
+  { <span class="field">department</span>: <span class="str">"Sales"</span> },
+  {
+    <span class="field">_id</span>: <span class="num">0</span>,
+    <span class="field">employee_id</span>: <span class="num">1</span>,
+    <span class="field">name</span>: <span class="num">1</span>,
+    <span class="field">department</span>: <span class="num">1</span>,
+    <span class="field">salary</span>: <span class="num">1</span>,
+    <span class="field">hire_date</span>: <span class="num">1</span>,
+    <span class="field">status</span>: <span class="num">1</span>
+  }
+).<span class="fn">sort</span>({ <span class="field">name</span>: <span class="num">1</span> })`,
+    docs: 8, conf: "96%", time: "12ms", index: "IXSCAN",
+    headers: ["employee_id","name","department","salary","hire_date","status"],
     data: [
-      ["E001","Alice Johnson","Sales","$82,000","2019-03-12","active"],
-      ["E004","Bob Martinez","Sales","$74,500","2021-07-08","active"],
-      ["E011","Carol White","Sales","$91,200","2018-01-23","active"],
-      ["E015","David Lee","Sales","$68,000","2022-11-01","active"],
-      ["E022","Emma Davis","Sales","$79,800","2020-05-17","on-leave"],
-      ["E031","Frank Kim","Sales","$88,400","2017-09-30","active"],
-      ["E038","Grace Patel","Sales","$72,100","2023-02-14","active"],
-      ["E042","Hiro Tanaka","Sales","$83,600","2019-11-22","active"],
+      ["E001","Alice Johnson","Sales","82000","2019-03-12","active"],
+      ["E004","Bob Martinez","Sales","74500","2021-07-08","active"],
+      ["E011","Carol White","Sales","91200","2018-01-23","active"],
+      ["E015","David Lee","Sales","68000","2022-11-01","active"],
+      ["E022","Emma Davis","Sales","79800","2020-05-17","on-leave"],
+      ["E031","Frank Kim","Sales","88400","2017-09-30","active"],
+      ["E038","Grace Patel","Sales","72100","2023-02-14","active"],
+      ["E042","Hiro Tanaka","Sales","83600","2019-11-22","active"],
     ],
-    badges: { 5: {"active":"green","on-leave":"yellow","inactive":"red"} }
+    badges: { 5: {"active":"green","on-leave":"amber","inactive":"red"} }
   },
-  "top 5 highest paid employees": {
-    sql: `<span class="sql-keyword">SELECT</span> employee_id, name, department, salary\n<span class="sql-keyword">FROM</span> <span class="sql-table">employees</span>\n<span class="sql-keyword">ORDER BY</span> salary <span class="sql-keyword">DESC</span>\n<span class="sql-keyword">LIMIT</span> <span class="sql-number">5</span>;`,
-    rows: 5, conf: "97%", time: "15", tokens: 7,
-    headers: ["ID","Name","Department","Salary","Rank"],
+
+  "top 5 highest paid": {
+    method: "find()",
+    operation: "db.employees.find(...).sort().limit()",
+    code: `db.<span class="coll">employees</span>.<span class="fn">find</span>(
+  {},
+  { <span class="field">_id</span>: <span class="num">0</span>, <span class="field">name</span>: <span class="num">1</span>, <span class="field">department</span>: <span class="num">1</span>, <span class="field">salary</span>: <span class="num">1</span> }
+)
+.<span class="fn">sort</span>({ <span class="field">salary</span>: <span class="op">-1</span> })
+.<span class="fn">limit</span>(<span class="num">5</span>)`,
+    docs: 5, conf: "98%", time: "8ms", index: "COLLSCAN",
+    headers: ["name","department","salary","rank"],
     data: [
-      ["E077","Michael Scott","Management","$145,000","#1"],
-      ["E033","Sarah Connor","Engineering","$138,500","#2"],
-      ["E011","Carol White","Sales","$91,200","#3"],
-      ["E056","James Wilson","Engineering","$127,300","#4"],
-      ["E069","Lisa Park","Finance","$121,000","#5"],
+      ["Michael Scott","Management","145000","#1"],
+      ["Sarah Connor","Engineering","138500","#2"],
+      ["James Wilson","Engineering","127300","#3"],
+      ["Lisa Park","Finance","121000","#4"],
+      ["Carol White","Sales","91200","#5"],
     ],
     badges: {}
   },
-  "count employees by department": {
-    sql: `<span class="sql-keyword">SELECT</span> department, <span class="sql-keyword">COUNT</span>(*) <span class="sql-keyword">AS</span> total_employees\n<span class="sql-keyword">FROM</span> <span class="sql-table">employees</span>\n<span class="sql-keyword">GROUP BY</span> department\n<span class="sql-keyword">ORDER BY</span> total_employees <span class="sql-keyword">DESC</span>;`,
-    rows: 6, conf: "96%", time: "18", tokens: 6,
-    headers: ["Department","Total Employees","% of Total","Avg Salary"],
+
+  "count by department": {
+    method: "aggregate()",
+    operation: "db.employees.aggregate([...])",
+    code: `db.<span class="coll">employees</span>.<span class="fn">aggregate</span>([
+  {
+    <span class="op">$group</span>: {
+      <span class="field">_id</span>: <span class="str">"$department"</span>,
+      <span class="field">total</span>: { <span class="op">$sum</span>: <span class="num">1</span> },
+      <span class="field">avg_salary</span>: { <span class="op">$avg</span>: <span class="str">"$salary"</span> }
+    }
+  },
+  { <span class="op">$sort</span>: { <span class="field">total</span>: <span class="op">-1</span> } },
+  {
+    <span class="op">$project</span>: {
+      <span class="field">department</span>: <span class="str">"$_id"</span>,
+      <span class="field">total</span>: <span class="num">1</span>,
+      <span class="field">avg_salary</span>: { <span class="op">$round</span>: [<span class="str">"$avg_salary"</span>, <span class="num">0</span>] },
+      <span class="field">_id</span>: <span class="num">0</span>
+    }
+  }
+])`,
+    docs: 6, conf: "97%", time: "18ms", index: "COLLSCAN",
+    headers: ["department","total","avg_salary","% of total"],
     data: [
-      ["Engineering","312","25.2%","$118,400"],
-      ["Sales","287","23.1%","$79,800"],
-      ["Operations","198","16.0%","$68,200"],
-      ["Marketing","156","12.6%","$85,600"],
-      ["Finance","142","11.5%","$95,100"],
-      ["Management","44","3.6%","$132,000"],
+      ["Engineering","312","118400","25.2%"],
+      ["Sales","287","79800","23.1%"],
+      ["Operations","198","68200","16.0%"],
+      ["Marketing","156","85600","12.6%"],
+      ["Finance","142","95100","11.5%"],
+      ["Management","44","132000","3.6%"],
     ],
     badges: {}
   },
-  "employees hired after 2020": {
-    sql: `<span class="sql-keyword">SELECT</span> employee_id, name, department, hire_date\n<span class="sql-keyword">FROM</span> <span class="sql-table">employees</span>\n<span class="sql-keyword">WHERE</span> hire_date > <span class="sql-string">'2020-12-31'</span>\n<span class="sql-keyword">ORDER BY</span> hire_date <span class="sql-keyword">DESC</span>;`,
-    rows: 7, conf: "95%", time: "21", tokens: 7,
-    headers: ["ID","Name","Department","Hire Date","Experience"],
+
+  "hired after 2020": {
+    method: "find()",
+    operation: "db.employees.find({ hire_date: { $gt: ... } })",
+    code: `db.<span class="coll">employees</span>.<span class="fn">find</span>(
+  {
+    <span class="field">hire_date</span>: {
+      <span class="op">$gt</span>: <span class="fn">ISODate</span>(<span class="str">"2020-12-31T00:00:00Z"</span>)
+    }
+  },
+  { <span class="field">_id</span>: <span class="num">0</span>, <span class="field">employee_id</span>: <span class="num">1</span>, <span class="field">name</span>: <span class="num">1</span>, <span class="field">department</span>: <span class="num">1</span>, <span class="field">hire_date</span>: <span class="num">1</span> }
+).<span class="fn">sort</span>({ <span class="field">hire_date</span>: <span class="op">-1</span> })`,
+    docs: 7, conf: "95%", time: "14ms", index: "IXSCAN",
+    headers: ["employee_id","name","department","hire_date","experience"],
     data: [
       ["E091","Noah Adams","Engineering","2023-08-14","< 1 yr"],
       ["E038","Grace Patel","Sales","2023-02-14","< 1 yr"],
-      ["E082","Mia Turner","Marketing","2022-10-05","1 yr"],
       ["E015","David Lee","Sales","2022-11-01","1 yr"],
+      ["E082","Mia Turner","Marketing","2022-10-05","1 yr"],
       ["E074","Liam Chen","Finance","2022-04-19","1 yr"],
       ["E067","Olivia Brown","Operations","2021-09-28","2 yrs"],
       ["E004","Bob Martinez","Sales","2021-07-08","2 yrs"],
     ],
     badges: {}
   },
-  "average salary by department": {
-    sql: `<span class="sql-keyword">SELECT</span> department, <span class="sql-keyword">AVG</span>(salary) <span class="sql-keyword">AS</span> avg_salary,\n       <span class="sql-keyword">MIN</span>(salary) <span class="sql-keyword">AS</span> min_salary, <span class="sql-keyword">MAX</span>(salary) <span class="sql-keyword">AS</span> max_salary\n<span class="sql-keyword">FROM</span> <span class="sql-table">employees</span>\n<span class="sql-keyword">GROUP BY</span> department\n<span class="sql-keyword">ORDER BY</span> avg_salary <span class="sql-keyword">DESC</span>;`,
-    rows: 6, conf: "93%", time: "26", tokens: 6,
-    headers: ["Department","Avg Salary","Min Salary","Max Salary","Range"],
+
+  "average salary per dept": {
+    method: "aggregate()",
+    operation: "db.employees.aggregate([{ $group }, { $sort }])",
+    code: `db.<span class="coll">employees</span>.<span class="fn">aggregate</span>([
+  {
+    <span class="op">$group</span>: {
+      <span class="field">_id</span>: <span class="str">"$department"</span>,
+      <span class="field">avg_salary</span>: { <span class="op">$avg</span>:  <span class="str">"$salary"</span> },
+      <span class="field">min_salary</span>: { <span class="op">$min</span>:  <span class="str">"$salary"</span> },
+      <span class="field">max_salary</span>: { <span class="op">$max</span>:  <span class="str">"$salary"</span> },
+      <span class="field">count</span>:      { <span class="op">$sum</span>:  <span class="num">1</span> }
+    }
+  },
+  {
+    <span class="op">$project</span>: {
+      <span class="field">department</span>: <span class="str">"$_id"</span>, <span class="field">_id</span>: <span class="num">0</span>,
+      <span class="field">avg_salary</span>: { <span class="op">$round</span>: [<span class="str">"$avg_salary"</span>, <span class="num">0</span>] },
+      <span class="field">min_salary</span>: <span class="num">1</span>, <span class="field">max_salary</span>: <span class="num">1</span>, <span class="field">count</span>: <span class="num">1</span>
+    }
+  },
+  { <span class="op">$sort</span>: { <span class="field">avg_salary</span>: <span class="op">-1</span> } }
+])`,
+    docs: 6, conf: "94%", time: "21ms", index: "COLLSCAN",
+    headers: ["department","avg_salary","min_salary","max_salary","count"],
     data: [
-      ["Management","$132,000","$98,000","$145,000","High"],
-      ["Finance","$95,100","$72,000","$121,000","Medium"],
-      ["Engineering","$118,400","$86,000","$138,500","High"],
-      ["Marketing","$85,600","$64,000","$112,000","Medium"],
-      ["Sales","$79,800","$68,000","$91,200","Medium"],
-      ["Operations","$68,200","$52,000","$88,000","Low"],
+      ["Management","132000","98000","145000","44"],
+      ["Engineering","118400","86000","138500","312"],
+      ["Finance","95100","72000","121000","142"],
+      ["Marketing","85600","64000","112000","156"],
+      ["Sales","79800","68000","91200","287"],
+      ["Operations","68200","52000","88000","198"],
     ],
-    badges: { 4: {"High":"purple","Medium":"yellow","Low":"red"} }
+    badges: {}
   }
 };
 
-let modelChart = null, timeChart = null;
-const timeHistory = [28,19,35,22,41,18,29,24,31,20];
+// state
+let modelChart=null, timeChart=null;
+const timeHistory=[22,14,31,18,40,12,27,19,35,16];
+const methodCounts={find:6,aggregate:3,insert:1,update:1};
+let uploadedFile=null, previewOpen=false;
+let activeColl='employees', activeOp='find()';
 
-// ---- UPLOADED FILE STATE ----
-let uploadedFileData = null; // { name, rows, cols, headers, preview }
-let previewOpen = false;
-
-function normalize(s) {
-  return s.toLowerCase().replace(/[^a-z0-9 ]/g,'').trim();
+function norm(s){ return s.toLowerCase().replace(/[^a-z0-9 ]/g,'').trim(); }
+function useChip(el){ document.getElementById('queryInput').value=el.textContent; }
+function clearQuery(){
+  document.getElementById('queryInput').value='';
+  document.getElementById('emptyState').style.display='block';
+  document.getElementById('results').style.display='none';
+  document.getElementById('loadingState').style.display='none';
 }
-function setQuery(el) { document.getElementById('queryInput').value = el.textContent; }
-function clearQuery() {
-  document.getElementById('queryInput').value = '';
-  document.getElementById('emptyState').style.display = 'block';
-  document.getElementById('results').style.display = 'none';
-  document.getElementById('loadingState').style.display = 'none';
-}
-function setNav(el) {
-  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+function setNav(el){
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
   el.classList.add('active');
 }
-function selectModel(el) {
-  document.querySelectorAll('.model-badge').forEach(m => m.classList.remove('active-model'));
-  el.classList.add('active-model');
+function selectColl(el, name){
+  document.querySelectorAll('.collection-item').forEach(c=>c.classList.remove('active-coll'));
+  el.classList.add('active-coll');
+  activeColl = name;
+  document.getElementById('activeColl').textContent = name;
+  document.getElementById('headerColl').textContent = name;
 }
-function copySQL() {
-  const txt = document.getElementById('sqlOutput').innerText;
+function selectOp(el){
+  document.querySelectorAll('.op-btn').forEach(b=>b.classList.remove('active-op'));
+  el.classList.add('active-op');
+  activeOp = el.textContent;
+}
+function copyQuery(){
+  const txt = document.getElementById('queryOutput').innerText;
   navigator.clipboard.writeText(txt).catch(()=>{});
-  const btn = document.querySelector('.sql-copy');
-  btn.textContent = '✓ Copied';
-  setTimeout(()=> btn.textContent = '📋 Copy', 1500);
+  const btn = document.querySelector('.qb-copy');
+  btn.textContent='✓ Copied';
+  setTimeout(()=>btn.textContent='📋 Copy',1500);
 }
-function addLog(type, msg) {
-  const lb = document.getElementById('logBody');
-  const time = new Date().toTimeString().slice(0,8);
-  const div = document.createElement('div');
-  div.className = 'log-line';
-  div.innerHTML = `<span class="log-time">${time}</span><span class="log-type-${type}">[${type.toUpperCase()}]</span><span class="log-msg">${msg}</span>`;
-  lb.appendChild(div);
-  lb.scrollTop = lb.scrollHeight;
-}
-async function sleep(ms) { return new Promise(r=>setTimeout(r,ms)); }
 
-// ---- DRAG AND DROP ----
-function handleDragOver(e) {
-  e.preventDefault();
-  document.getElementById('uploadZone').classList.add('drag-over');
-}
-function handleDragLeave(e) {
-  document.getElementById('uploadZone').classList.remove('drag-over');
-}
-function handleDrop(e) {
+// ── DRAG DROP ──
+function handleDragOver(e){e.preventDefault();document.getElementById('uploadZone').classList.add('drag-over');}
+function handleDragLeave(e){document.getElementById('uploadZone').classList.remove('drag-over');}
+function handleDrop(e){
   e.preventDefault();
   document.getElementById('uploadZone').classList.remove('drag-over');
-  const file = e.dataTransfer.files[0];
-  if (file) processFile(file);
+  const f=e.dataTransfer.files[0];
+  if(f) processFile(f);
 }
-function handleFileSelect(e) {
-  const file = e.target.files[0];
-  if (file) processFile(file);
-}
+function handleFileSelect(e){ const f=e.target.files[0]; if(f) processFile(f); }
 
-// ---- FILE PROCESSING ----
-function processFile(file) {
-  const ext = file.name.split('.').pop().toLowerCase();
-  const allowed = ['csv','tsv','json','xlsx','xls'];
-  if (!allowed.includes(ext)) {
-    alert('Unsupported file format. Please upload CSV, TSV, JSON, or XLSX.');
-    return;
-  }
-
-  // Show progress
-  const prog = document.getElementById('uploadProgress');
-  const fill = document.getElementById('progressFill');
-  const label = document.getElementById('progressLabel');
-  prog.style.display = 'block';
-  fill.style.width = '0%';
-  label.textContent = 'Reading file...';
-
-  let pct = 0;
-  const interval = setInterval(()=>{
-    pct = Math.min(pct + Math.random()*25, 90);
-    fill.style.width = pct + '%';
-  }, 80);
-
-  const reader = new FileReader();
-  reader.onload = (e) => {
-    clearInterval(interval);
-    fill.style.width = '100%';
-    label.textContent = 'Parsing data...';
-
+function processFile(file){
+  const ext=file.name.split('.').pop().toLowerCase();
+  if(!['csv','tsv','json','xlsx','xls'].includes(ext)){ alert('Unsupported format.'); return; }
+  const prog=document.getElementById('uploadProgress');
+  const fill=document.getElementById('progFill');
+  const label=document.getElementById('progLabel');
+  prog.style.display='block'; fill.style.width='0%'; label.textContent='Reading...';
+  let pct=0;
+  const iv=setInterval(()=>{pct=Math.min(pct+Math.random()*30,90);fill.style.width=pct+'%';},70);
+  const reader=new FileReader();
+  reader.onload=(e)=>{
+    clearInterval(iv); fill.style.width='100%'; label.textContent='Mapping schema...';
     setTimeout(()=>{
-      prog.style.display = 'none';
-      fill.style.width = '0%';
-
-      let parsed = null;
-      try {
-        if (ext === 'json') {
-          parsed = parseJSON(e.target.result);
-        } else if (ext === 'csv' || ext === 'tsv') {
-          const delimiter = ext === 'tsv' ? '\t' : ',';
-          parsed = parseCSV(e.target.result, delimiter);
-        } else {
-          // For XLSX show a friendly message
-          parsed = { headers: ['[XLSX]'], rows: [], rowCount: '?' , note: 'XLSX preview not available in browser. File registered.' };
-        }
-      } catch(err) {
-        console.error(err);
-        parsed = { headers: ['Error'], rows: [[err.message]], rowCount: 0 };
-      }
-
-      const sizeFmt = file.size > 1024*1024
-        ? (file.size/(1024*1024)).toFixed(1) + ' MB'
-        : (file.size/1024).toFixed(1) + ' KB';
-
-      uploadedFileData = {
-        name: file.name,
-        size: sizeFmt,
-        ext: ext.toUpperCase(),
-        rows: parsed.rowCount,
-        cols: parsed.headers.length,
-        headers: parsed.headers,
-        preview: parsed.rows.slice(0, 5)
-      };
-
+      prog.style.display='none';
+      let parsed;
+      try{
+        if(ext==='json') parsed=parseJSON(e.target.result);
+        else if(ext==='csv'||ext==='tsv') parsed=parseCSV(e.target.result,ext==='tsv'?'\t':',');
+        else parsed={headers:['[XLSX — preview N/A]'],rows:[],rowCount:'?'};
+      }catch(err){ parsed={headers:['error'],rows:[[err.message]],rowCount:0}; }
+      const sz=file.size>1024*1024?(file.size/(1024*1024)).toFixed(1)+' MB':(file.size/1024).toFixed(1)+' KB';
+      uploadedFile={ name:file.name, size:sz, ext:ext.toUpperCase(), rows:parsed.rowCount, cols:parsed.headers.length, headers:parsed.headers, preview:parsed.rows.slice(0,5) };
       showFileLoaded();
-    }, 300);
+    },300);
   };
+  if(ext==='xlsx'||ext==='xls') reader.readAsArrayBuffer(file);
+  else reader.readAsText(file);
+}
 
-  if (ext === 'xlsx' || ext === 'xls') {
-    reader.readAsArrayBuffer(file);
-  } else {
-    reader.readAsText(file);
+function parseCSV(text,delim=','){
+  const lines=text.trim().split('\n').filter(l=>l.trim());
+  if(!lines.length) return{headers:[],rows:[],rowCount:0};
+  const headers=lines[0].split(delim).map(h=>h.trim().replace(/^"|"$/g,''));
+  const rows=lines.slice(1).map(l=>l.split(delim).map(c=>c.trim().replace(/^"|"$/g,'')));
+  return{headers,rows,rowCount:rows.length};
+}
+function parseJSON(text){
+  const data=JSON.parse(text);
+  const arr=Array.isArray(data)?data:(data.data||data.records||Object.values(data)[0]||[]);
+  if(!arr.length) return{headers:[],rows:[],rowCount:0};
+  const headers=Object.keys(arr[0]);
+  const rows=arr.map(obj=>headers.map(h=>String(obj[h]??'')));
+  return{headers,rows,rowCount:rows.length};
+}
+
+function showFileLoaded(){
+  const fd=uploadedFile;
+  document.getElementById('flName').textContent=fd.name;
+  document.getElementById('flMeta').textContent=`${fd.ext} · ${fd.rows} docs · ${fd.cols} fields · ${fd.size}`;
+  document.getElementById('fileLoaded').style.display='block';
+  // preview table
+  const prev=document.getElementById('flPreviewData');
+  if(fd.preview&&fd.preview.length){
+    let html='<table><thead><tr>'+fd.headers.map(h=>`<th>${h}</th>`).join('')+'</tr></thead><tbody>';
+    fd.preview.forEach(row=>{ html+='<tr>'+row.map(c=>`<td>${c}</td>`).join('')+'</tr>'; });
+    prev.innerHTML=html+'</tbody></table>';
+  } else { prev.innerHTML='<span style="color:var(--muted)">No preview available</span>'; }
+  // update collection name
+  const collName=fd.name.replace(/\.[^.]+$/,'').replace(/[^a-zA-Z0-9_]/g,'_');
+  document.getElementById('activeColl').textContent=collName;
+  document.getElementById('headerColl').textContent=collName;
+  document.getElementById('dbName').textContent='uploadedDB';
+  document.getElementById('dbMeta').textContent=`1 collection · ${fd.rows} docs`;
+  // banner
+  document.getElementById('dsBanner').style.display='flex';
+  document.getElementById('dsFileName').textContent=fd.name;
+  document.getElementById('dsRows').textContent=fd.rows+' docs';
+  // update chips
+  if(fd.headers&&fd.headers.length){
+    const f=fd.headers[0]||'field', f2=fd.headers[1]||fd.headers[0]||'field';
+    const defaults=[`Find all by ${f}`,`Top 5 by ${f2}`,`Count by ${f}`,`Group by ${f2}`,`Average of ${f2}`];
+    document.querySelectorAll('.chip').forEach((c,i)=>{ if(defaults[i]) c.textContent=defaults[i]; });
   }
 }
 
-function parseCSV(text, delimiter=',') {
-  const lines = text.trim().split('\n').filter(l=>l.trim());
-  if (!lines.length) return { headers:[], rows:[], rowCount:0 };
-  const headers = lines[0].split(delimiter).map(h=>h.trim().replace(/^"|"$/g,''));
-  const rows = lines.slice(1).map(l => {
-    return l.split(delimiter).map(c=>c.trim().replace(/^"|"$/g,''));
-  });
-  return { headers, rows, rowCount: rows.length };
+function togglePreview(){
+  previewOpen=!previewOpen;
+  document.getElementById('flPreviewData').style.display=previewOpen?'block':'none';
+  document.getElementById('flPreviewBtn').textContent=previewOpen?'▴ HIDE DOCUMENTS':'▾ PREVIEW DOCUMENTS';
+}
+function removeFile(){
+  uploadedFile=null; previewOpen=false;
+  document.getElementById('fileLoaded').style.display='none';
+  document.getElementById('flPreviewData').style.display='none';
+  document.getElementById('flPreviewBtn').textContent='▾ PREVIEW DOCUMENTS';
+  document.getElementById('fileInput').value='';
+  document.getElementById('dsBanner').style.display='none';
+  document.getElementById('activeColl').textContent='employees';
+  document.getElementById('headerColl').textContent='employees';
+  document.getElementById('dbName').textContent='myDatabase';
+  document.getElementById('dbMeta').textContent='4 collections · 6,420 docs';
+  const defaults=['Find all employees in Sales','Top 5 highest paid','Count by department','Hired after 2020','Average salary per dept'];
+  document.querySelectorAll('.chip').forEach((c,i)=>{ if(defaults[i]) c.textContent=defaults[i]; });
 }
 
-function parseJSON(text) {
-  const data = JSON.parse(text);
-  const arr = Array.isArray(data) ? data : (data.data || data.records || Object.values(data)[0] || []);
-  if (!arr.length) return { headers:[], rows:[], rowCount:0 };
-  const headers = Object.keys(arr[0]);
-  const rows = arr.map(obj => headers.map(h => String(obj[h] ?? '')));
-  return { headers, rows, rowCount: rows.length };
+// ── LOGGING ──
+function addLog(type,msg){
+  const lb=document.getElementById('logBody');
+  const time=new Date().toTimeString().slice(0,8);
+  const div=document.createElement('div');
+  div.className='log-line';
+  div.innerHTML=`<span class="lg-time">${time}</span><span class="lg-${type}">[${type.toUpperCase()}]</span><span class="lg-msg">${msg}</span>`;
+  lb.appendChild(div); lb.scrollTop=lb.scrollHeight;
 }
 
-function showFileLoaded() {
-  const fd = uploadedFileData;
-  document.getElementById('fileLoadedName').textContent = fd.name;
-  document.getElementById('fileLoadedMeta').textContent = `${fd.ext} · ${fd.rows} rows · ${fd.cols} cols · ${fd.size}`;
-  document.getElementById('fileLoaded').style.display = 'block';
+async function sleep(ms){ return new Promise(r=>setTimeout(r,ms)); }
 
-  // Render preview table
-  const prev = document.getElementById('fileDataPreview');
-  if (fd.preview && fd.preview.length) {
-    let html = '<table><thead><tr>';
-    fd.headers.forEach(h => { html += `<th>${h}</th>`; });
-    html += '</tr></thead><tbody>';
-    fd.preview.forEach(row => {
-      html += '<tr>' + row.map(c=>`<td>${c}</td>`).join('') + '</tr>';
-    });
-    html += '</tbody></table>';
-    prev.innerHTML = html;
-  } else {
-    prev.innerHTML = '<span style="color:var(--muted);">No preview available</span>';
-  }
+// ── RUN QUERY ──
+async function runQuery(){
+  const raw=document.getElementById('queryInput').value.trim();
+  if(!raw) return;
 
-  // Update DB info box
-  document.getElementById('dbName').textContent = fd.name;
-  document.getElementById('dbMeta').textContent = `Uploaded · 1 table · ${fd.rows} rows`;
+  document.getElementById('emptyState').style.display='none';
+  document.getElementById('results').style.display='none';
+  const loading=document.getElementById('loadingState');
+  loading.style.display='flex';
 
-  // Show banner in query panel
-  const banner = document.getElementById('dataSourceBanner');
-  banner.style.display = 'flex';
-  document.getElementById('bannerFileName').textContent = fd.name;
-  document.getElementById('bannerRows').textContent = fd.rows + ' rows';
-
-  // Update example chips to reflect uploaded data
-  updateExampleChipsForUpload(fd.headers);
-
-  addLog && null; // no log yet, wait for user query
-}
-
-function updateExampleChipsForUpload(headers) {
-  if (!headers || !headers.length) return;
-  const chips = document.querySelectorAll('.example-chip');
-  const col1 = headers[0] || 'column';
-  const col2 = headers[1] || headers[0] || 'column';
-  const suggestions = [
-    `Show all ${col1}`,
-    `Count by ${col2}`,
-    `Top 5 by ${col2}`,
-    `Show all rows`,
-    `Average of ${col2}`,
-  ];
-  chips.forEach((chip, i) => {
-    if (suggestions[i]) chip.textContent = suggestions[i];
-  });
-}
-
-function togglePreview() {
-  previewOpen = !previewOpen;
-  const prev = document.getElementById('fileDataPreview');
-  const btn = document.getElementById('previewToggle');
-  prev.style.display = previewOpen ? 'block' : 'none';
-  btn.textContent = previewOpen ? '▴ HIDE PREVIEW' : '▾ PREVIEW DATA';
-}
-
-function removeFile() {
-  uploadedFileData = null;
-  previewOpen = false;
-  document.getElementById('fileLoaded').style.display = 'none';
-  document.getElementById('fileDataPreview').style.display = 'none';
-  document.getElementById('previewToggle').textContent = '▾ PREVIEW DATA';
-  document.getElementById('fileInput').value = '';
-  document.getElementById('dataSourceBanner').style.display = 'none';
-  document.getElementById('dbName').textContent = 'employees.db';
-  document.getElementById('dbMeta').textContent = 'SQLite · 4 tables · 1,240 rows';
-  // Reset example chips
-  const defaults = ['Show all employees in Sales','Top 5 highest paid employees','Count employees by department','Employees hired after 2020','Average salary by department'];
-  document.querySelectorAll('.example-chip').forEach((c,i)=>{ if(defaults[i]) c.textContent=defaults[i]; });
-}
-
-// ---- RUN QUERY ----
-async function runQuery() {
-  const raw = document.getElementById('queryInput').value.trim();
-  if (!raw) return;
-
-  document.getElementById('emptyState').style.display = 'none';
-  document.getElementById('results').style.display = 'none';
-  const loading = document.getElementById('loadingState');
-  loading.style.display = 'flex';
-
-  const msgs = [
+  const steps=[
     "Tokenizing input...",
-    "Removing stopwords...",
-    "Running Named Entity Recognition...",
-    "Detecting intent...",
-    uploadedFileData
-      ? `Mapping query to uploaded file: ${uploadedFileData.name}...`
-      : "Generating SQL with T5 model...",
-    "Executing query on database...",
-    "Building visualizations..."
+    "Detecting intent and operators...",
+    "Mapping to collection schema...",
+    "Generating MongoDB query...",
+    "Optimizing with index hints...",
+    "Executing on database..."
   ];
-
-  for (let i = 0; i < msgs.length; i++) {
-    document.getElementById('loadingMsg').textContent = msgs[i];
-    await sleep(200);
+  for(const s of steps){
+    document.getElementById('loadingMsg').textContent=s;
+    await sleep(190);
   }
+  loading.style.display='none';
 
-  loading.style.display = 'none';
-
-  const key = normalize(raw);
-  let qd = null;
-  for (const k of Object.keys(QUERY_DATA)) {
-    if (key.includes(normalize(k)) || normalize(k).includes(key)) { qd = QUERY_DATA[k]; break; }
+  // Match query
+  const k=norm(raw);
+  let qd=null;
+  for(const key of Object.keys(QUERIES)){
+    if(k.includes(norm(key))||norm(key).split(' ').filter(w=>w.length>3).every(w=>k.includes(w))){
+      qd=QUERIES[key]; break;
+    }
   }
-  if (!qd) qd = QUERY_DATA["count employees by department"];
+  if(!qd) qd=QUERIES["count by department"];
 
-  // If file uploaded, override SQL table name
-  let sqlOutput = qd.sql;
-  if (uploadedFileData) {
-    const tname = uploadedFileData.name.replace(/\.[^.]+$/, '').replace(/[^a-zA-Z0-9_]/g, '_');
-    sqlOutput = sqlOutput.replace(/employees/g, tname);
-  }
+  // Swap collection name if file uploaded
+  let codeHtml=qd.code;
+  const coll=activeColl;
+  codeHtml=codeHtml.replace(/employees/g, coll);
 
-  document.getElementById('results').style.display = 'block';
-  document.getElementById('sqlOutput').innerHTML = sqlOutput;
-  document.getElementById('statRows').textContent = uploadedFileData ? uploadedFileData.rows : qd.rows;
-  document.getElementById('statConf').textContent = qd.conf;
-  document.getElementById('statTime').textContent = qd.time + "ms";
-  document.getElementById('statTokens').textContent = qd.tokens;
+  document.getElementById('results').style.display='block';
+  document.getElementById('qbMethod').textContent=qd.method;
+  document.getElementById('qbOperation').textContent=qd.operation.replace('employees',coll);
+  document.getElementById('queryOutput').innerHTML=codeHtml;
+  document.getElementById('statDocs').textContent=uploadedFile?uploadedFile.rows:qd.docs;
+  document.getElementById('statConf').textContent=qd.conf;
+  document.getElementById('statTime').textContent=qd.time;
+  document.getElementById('statIndex').textContent=qd.index;
 
-  // Table — use uploaded data preview if available
-  const thead = document.getElementById('tableHead');
-  const tbody = document.getElementById('tableBody');
-
-  if (uploadedFileData && uploadedFileData.preview.length) {
-    thead.innerHTML = '<tr>' + uploadedFileData.headers.map(h=>`<th>${h}</th>`).join('') + '</tr>';
-    tbody.innerHTML = '';
-    uploadedFileData.preview.forEach(row => {
-      const tr = document.createElement('tr');
-      tr.innerHTML = row.map(c=>`<td>${c}</td>`).join('');
+  // Table
+  const thead=document.getElementById('tableHead');
+  const tbody=document.getElementById('tableBody');
+  if(uploadedFile&&uploadedFile.preview.length){
+    thead.innerHTML='<tr>'+uploadedFile.headers.map(h=>`<th>${h}</th>`).join('')+'</tr>';
+    tbody.innerHTML='';
+    uploadedFile.preview.forEach(row=>{
+      const tr=document.createElement('tr');
+      tr.innerHTML=row.map(c=>`<td>${c}</td>`).join('');
       tbody.appendChild(tr);
     });
-    document.getElementById('tableCount').textContent = uploadedFileData.rows + ' rows (preview: 5)';
+    document.getElementById('tableCount').textContent=uploadedFile.rows+' documents (preview: 5)';
   } else {
-    thead.innerHTML = '<tr>' + qd.headers.map(h=>`<th>${h}</th>`).join('') + '</tr>';
-    tbody.innerHTML = '';
-    qd.data.forEach(row => {
-      const tr = document.createElement('tr');
-      tr.innerHTML = row.map((cell, ci) => {
-        if (qd.badges[ci]) {
-          const colorKey = qd.badges[ci][cell] || 'green';
-          return `<td><span class="badge badge-${colorKey}">${cell}</span></td>`;
+    thead.innerHTML='<tr>'+qd.headers.map(h=>`<th>${h}</th>`).join('')+'</tr>';
+    tbody.innerHTML='';
+    qd.data.forEach(row=>{
+      const tr=document.createElement('tr');
+      tr.innerHTML=row.map((cell,ci)=>{
+        if(qd.badges[ci]){
+          const bk=qd.badges[ci][cell]||'green';
+          return`<td><span class="badge badge-${bk}">${cell}</span></td>`;
         }
-        return `<td>${cell}</td>`;
+        return`<td>${cell}</td>`;
       }).join('');
       tbody.appendChild(tr);
     });
-    document.getElementById('tableCount').textContent = qd.rows + ' rows';
+    document.getElementById('tableCount').textContent=qd.docs+' documents';
   }
+
+  // Update method counts
+  if(qd.method.startsWith('aggregate')) methodCounts.aggregate++;
+  else if(qd.method.startsWith('find')) methodCounts.find++;
 
   buildCharts();
 
-  document.getElementById('logBody').innerHTML = '';
-  const src = uploadedFileData ? uploadedFileData.name : 'employees.db';
-  const logs = [
-    ['info', `Query received: "${raw.slice(0,50)}"`],
-    ['info', `Data source: ${src}`],
-    ['info', 'NLP preprocessing complete — ' + qd.tokens + ' tokens'],
-    ['info', 'Intent detected: DATA_RETRIEVAL'],
-    ['success', 'SQL generated by T5 model (conf: ' + qd.conf + ')'],
-    ['success', 'Query executed in ' + qd.time + 'ms — ' + (uploadedFileData ? uploadedFileData.rows : qd.rows) + ' rows'],
-    ['success', 'Visualizations rendered'],
+  // Logs
+  document.getElementById('logBody').innerHTML='';
+  const src=uploadedFile?uploadedFile.name:coll+' collection';
+  const logs=[
+    ['info',`Query: "${raw.slice(0,55)}"`],
+    ['info',`Collection: ${coll} | Source: ${src}`],
+    ['info',`Operation detected: ${qd.method}`],
+    ['success',`Query generated (confidence: ${qd.conf})`],
+    ['info',`Index scan: ${qd.index}`],
+    ['success',`Executed in ${qd.time} — ${uploadedFile?uploadedFile.rows:qd.docs} documents returned`],
   ];
-  for (const [t,m] of logs) addLog(t, m);
+  for(const [t,m] of logs) addLog(t,m);
 
-  for (let i=1; i<=6; i++) {
-    document.getElementById('s'+i).className = 'step done';
-    document.getElementById('s'+i).querySelector('.step-num').textContent = '✓';
+  for(let i=1;i<=6;i++){
+    document.getElementById('ps'+i).className='ps done';
+    document.getElementById('ps'+i).querySelector('.ps-icon').textContent='✓';
   }
-  document.querySelector('.content').scrollTop = 0;
+  document.getElementById('content').scrollTop=0;
   timeHistory.push(parseInt(qd.time));
   timeHistory.shift();
 }
 
-function buildCharts() {
-  Chart.defaults.color = '#6b6b8a';
-  Chart.defaults.font.family = "'Space Mono', monospace";
-  Chart.defaults.font.size = 11;
-  if (modelChart) modelChart.destroy();
-  if (timeChart) timeChart.destroy();
-  const gridColor = 'rgba(42,42,62,0.6)';
-  modelChart = new Chart(document.getElementById('modelChart'), {
-    type: 'bar',
-    data: {
-      labels: ['T5 Text-to-SQL','BERT','Zero-Shot','GPT-Baseline'],
-      datasets: [{
-        data: [94.2,91.7,87.3,89.1],
-        backgroundColor: ['rgba(0,245,196,0.7)','rgba(124,92,252,0.7)','rgba(255,209,102,0.7)','rgba(255,107,107,0.7)'],
-        borderColor: ['#00f5c4','#7c5cfc','#ffd166','#ff6b6b'],
-        borderWidth: 1, borderRadius: 4,
+function buildCharts(){
+  Chart.defaults.color='#7d8590';
+  Chart.defaults.font.family="'JetBrains Mono', monospace";
+  Chart.defaults.font.size=10;
+  if(modelChart) modelChart.destroy();
+  if(timeChart) timeChart.destroy();
+  const gc='rgba(48,54,61,0.7)';
+
+  modelChart=new Chart(document.getElementById('methodChart'),{
+    type:'doughnut',
+    data:{
+      labels:['find()','aggregate()','insert()','update()'],
+      datasets:[{
+        data:[methodCounts.find,methodCounts.aggregate,methodCounts.insert,methodCounts.update],
+        backgroundColor:['rgba(0,237,100,0.7)','rgba(150,208,255,0.7)','rgba(245,158,11,0.7)','rgba(220,189,251,0.7)'],
+        borderColor:['#00ed64','#96d0ff','#f59e0b','#dcbdfb'],
+        borderWidth:1,
       }]
     },
-    options: {
-      responsive: true, maintainAspectRatio: false,
-      plugins: { legend: { display: false } },
-      scales: {
-        y: { min:80, max:100, grid:{color:gridColor}, ticks:{callback:v=>v+'%'} },
-        x: { grid:{display:false} }
-      }
+    options:{
+      responsive:true, maintainAspectRatio:false,
+      plugins:{
+        legend:{ position:'right', labels:{ boxWidth:10, padding:10 } }
+      },
+      cutout:'62%'
     }
   });
-  timeChart = new Chart(document.getElementById('timeChart'), {
-    type: 'line',
-    data: {
-      labels: timeHistory.map((_,i)=>'Q'+(i+1)),
-      datasets: [{
-        data: timeHistory,
-        borderColor: '#00f5c4',
-        backgroundColor: 'rgba(0,245,196,0.08)',
-        fill: true, tension: 0.4,
-        pointBackgroundColor: '#00f5c4',
-        pointRadius: 3, borderWidth: 2,
+
+  timeChart=new Chart(document.getElementById('timeChart'),{
+    type:'line',
+    data:{
+      labels:timeHistory.map((_,i)=>'Q'+(i+1)),
+      datasets:[{
+        data:timeHistory,
+        borderColor:'#00ed64',
+        backgroundColor:'rgba(0,237,100,0.07)',
+        fill:true, tension:0.4,
+        pointBackgroundColor:'#00ed64',
+        pointRadius:3, borderWidth:2,
       }]
     },
-    options: {
-      responsive: true, maintainAspectRatio: false,
-      plugins: { legend: { display: false } },
-      scales: {
-        y: { grid:{color:gridColor}, ticks:{callback:v=>v+'ms'} },
-        x: { grid:{display:false} }
+    options:{
+      responsive:true, maintainAspectRatio:false,
+      plugins:{legend:{display:false}},
+      scales:{
+        y:{grid:{color:gc}, ticks:{callback:v=>v+'ms'}},
+        x:{grid:{display:false}}
       }
     }
   });
 }
 
-document.getElementById('queryInput').addEventListener('keydown', e => {
-  if (e.key === 'Enter') runQuery();
+document.getElementById('queryInput').addEventListener('keydown',e=>{
+  if(e.key==='Enter') runQuery();
 });
 </script>
 </body>
